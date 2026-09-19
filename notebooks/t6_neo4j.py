@@ -29,4 +29,6 @@ hive = spark.sql("""SELECT ROUND(SUM(oi.quantity * p.price), 2)
     FROM shop.order_items oi JOIN shop.products p ON p.id = oi.product_id
     JOIN shop.orders o ON o.id = oi.order_id WHERE o.status = 'delivered'""").first()[0]
 print("TOTAL_HIVE", hive)
+jvm = spark.sparkContext._jvm
 spark.stop()
+jvm.System.exit(0)  # the Neo4j driver leaves non-daemon threads that keep the JVM alive
