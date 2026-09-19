@@ -14,9 +14,11 @@ case "$cmd" in
   load-sample)
           sh scripts/platform.sh data
           docker compose exec -T tools spark-submit scripts/load_sample_hive.py 2>&1 | grep -E '^LOADED|Exception|Caused by' ;;
+  load-sql)
+          docker compose exec -T tools python3 scripts/load_sample_sql.py ;;
   reset)  printf 'This DELETES all data in this project (HDFS, Hive metadata). Type yes to continue: '
           read -r ans
           [ "$ans" = "yes" ] || { echo "Cancelled."; exit 1; }
           docker compose down -v ;;
-  *)      echo "Usage: sh scripts/platform.sh {init|up|stop|status|shell|data|load-sample|reset}" ;;
+  *)      echo "Usage: sh scripts/platform.sh {init|up|stop|status|shell|data|load-sample|load-sql|reset}" ;;
 esac

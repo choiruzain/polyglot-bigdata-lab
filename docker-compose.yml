@@ -119,17 +119,20 @@ services:
   tools:
     build: ./images/tools
     image: dataplatform/tools:local
-    profiles: ["bigdata-lite", "bigdata-full"]
+    profiles: ["bigdata-lite", "bigdata-full", "sql"]
     hostname: tools
     init: true
     command: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--notebook-dir=/home/student/notebooks"]
     depends_on:
       metastore:
         condition: service_healthy
+        required: false
     environment:
       HADOOP_USER_NAME: student
       HADOOP_CONF_DIR: /opt/hadoop-conf
       JUPYTER_TOKEN: ${JUPYTER_TOKEN:?run scripts/init-env.sh first}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
     volumes:
       - ./config/hadoop:/opt/hadoop-conf:ro
       - ./config/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
@@ -147,7 +150,48 @@ services:
       start_period: 20s
     restart: "no"
 
+  postgres:
+    image: postgres:18.6
+    profiles: ["sql"]
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: student
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run scripts/init-env.sh first}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U student -d shop"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: "no"
+
+  mysql:
+    image: mysql:9.7
+    profiles: ["sql"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?run scripts/init-env.sh first}
+      MYSQL_DATABASE: shop
+      MYSQL_USER: student
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?run scripts/init-env.sh first}
+    command: ["--innodb-buffer-pool-size=128M"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${MYSQL_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    restart: "no"
+
 volumes:
   metastore-db-data:
   namenode-data:
   datanode-data:
+  postgres-data:
+  mysql-data:

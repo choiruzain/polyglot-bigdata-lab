@@ -60,3 +60,20 @@ RUN set -eux; \
     rm -f /tmp/sbt.tgz /tmp/sbt.sha
 ENV PATH="/opt/sbt/bin:${PATH}"
 ENV SBT_OPTS="-Xmx1g"
+
+# SQL clients and Python database drivers
+USER root
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-client mysql-client \
+ && rm -rf /var/lib/apt/lists/*
+USER student
+RUN pip install --no-cache-dir "psycopg[binary]" mysql-connector-python sqlalchemy
+
+
+# JDBC drivers for Spark (PostgreSQL, MySQL)
+ARG PG_JDBC_VERSION=42.7.13
+ARG MYSQL_JDBC_VERSION=26.7.0
+COPY --chown=student:student --chmod=755 fetch_jar.sh /tmp/fetch_jar.sh
+RUN /tmp/fetch_jar.sh org/postgresql/postgresql/${PG_JDBC_VERSION}/postgresql-${PG_JDBC_VERSION}.jar /opt/spark/jars \
+ && /tmp/fetch_jar.sh com/mysql/mysql-connector-j/${MYSQL_JDBC_VERSION}/mysql-connector-j-${MYSQL_JDBC_VERSION}.jar /opt/spark/jars \
+ && rm -f /tmp/fetch_jar.sh
