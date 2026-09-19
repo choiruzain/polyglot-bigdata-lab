@@ -30,3 +30,6 @@ RUN set -eux; \
 
 ENV HADOOP_HOME=/opt/hadoop
 ENV PATH="${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin:${PATH}"
+
+RUN mkdir -p /opt/hadoop/data/namenode /opt/hadoop/data/datanode
+COPY --chown=hadoop:hadoop --chmod=755 entrypoint.sh /opt/hadoop/entrypoint.sh
