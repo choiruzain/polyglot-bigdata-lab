@@ -119,7 +119,7 @@ services:
   tools:
     build: ./images/tools
     image: dataplatform/tools:local
-    profiles: ["bigdata-lite", "bigdata-full", "sql"]
+    profiles: ["bigdata-lite", "bigdata-full", "sql", "mongo"]
     hostname: tools
     init: true
     command: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--notebook-dir=/home/student/notebooks"]
@@ -133,6 +133,7 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN:?run scripts/init-env.sh first}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
+      MONGO_PASSWORD: ${MONGO_STUDENT_PASSWORD:-}
     volumes:
       - ./config/hadoop:/opt/hadoop-conf:ro
       - ./config/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
@@ -189,9 +190,32 @@ services:
       start_period: 30s
     restart: "no"
 
+  mongo:
+    image: mongo:8.3
+    profiles: ["mongo"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?run scripts/init-env.sh first}
+      MONGO_STUDENT_PASSWORD: ${MONGO_STUDENT_PASSWORD:?add MONGO_STUDENT_PASSWORD to .env}
+    command: ["mongod", "--wiredTigerCacheSizeGB", "0.25", "--bind_ip_all"]
+    volumes:
+      - mongo-data:/data/db
+      - ./scripts/mongo/init-student.sh:/docker-entrypoint-initdb.d/init-student.sh:ro
+      - ./scripts/mongo:/scripts:ro
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${MONGO_PORT:-27017}:27017"
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep -q 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+    restart: "no"
+
 volumes:
   metastore-db-data:
   namenode-data:
   datanode-data:
   postgres-data:
   mysql-data:
+  mongo-data:

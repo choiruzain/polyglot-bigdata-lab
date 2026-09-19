@@ -77,3 +77,5 @@ COPY --chown=student:student --chmod=755 fetch_jar.sh /tmp/fetch_jar.sh
 RUN /tmp/fetch_jar.sh org/postgresql/postgresql/${PG_JDBC_VERSION}/postgresql-${PG_JDBC_VERSION}.jar /opt/spark/jars \
  && /tmp/fetch_jar.sh com/mysql/mysql-connector-j/${MYSQL_JDBC_VERSION}/mysql-connector-j-${MYSQL_JDBC_VERSION}.jar /opt/spark/jars \
  && rm -f /tmp/fetch_jar.sh
+
+RUN pip install --no-cache-dir pymongo
