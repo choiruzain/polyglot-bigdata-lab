@@ -79,3 +79,8 @@ RUN /tmp/fetch_jar.sh org/postgresql/postgresql/${PG_JDBC_VERSION}/postgresql-${
  && rm -f /tmp/fetch_jar.sh
 
 RUN pip install --no-cache-dir pymongo
+
+# MongoDB Spark Connector (jars resolved once at build time)
+ARG MONGO_SPARK_VERSION=11.1.0
+COPY --chown=student:student --chmod=755 install_mongo_connector.sh /tmp/install_mongo_connector.sh
+RUN /tmp/install_mongo_connector.sh ${MONGO_SPARK_VERSION} && rm -f /tmp/install_mongo_connector.sh
