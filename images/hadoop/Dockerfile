@@ -8,6 +8,12 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends curl ca-certificates procps \
  && rm -rf /var/lib/apt/lists/*
 
+RUN useradd --create-home --uid 1500 hadoop \
+ && mkdir /opt/hadoop && chown hadoop:hadoop /opt/hadoop
+
+USER hadoop
+WORKDIR /home/hadoop
+
 RUN set -eux; \
     case "${TARGETARCH}" in \
       amd64) f="hadoop-${HADOOP_VERSION}.tar.gz" ;; \
@@ -18,13 +24,9 @@ RUN set -eux; \
     curl -fsSL -o /tmp/hadoop.tgz.sha512 "${HADOOP_URL}/${f}.sha512"; \
     expected="$(grep -oE '[0-9a-fA-F]{128}' /tmp/hadoop.tgz.sha512 | head -n1)"; \
     echo "${expected}  /tmp/hadoop.tgz" | sha512sum -c -; \
-    mkdir -p /opt/hadoop; \
     tar -xzf /tmp/hadoop.tgz -C /opt/hadoop --strip-components=1; \
-    rm /tmp/hadoop.tgz /tmp/hadoop.tgz.sha512
+    rm -f /tmp/hadoop.tgz /tmp/hadoop.tgz.sha512; \
+    rm -rf /opt/hadoop/share/doc
 
 ENV HADOOP_HOME=/opt/hadoop
 ENV PATH="${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin:${PATH}"
-
-RUN useradd --create-home --uid 1500 hadoop && chown -R hadoop:hadoop /opt/hadoop
-USER hadoop
-WORKDIR /home/hadoop
