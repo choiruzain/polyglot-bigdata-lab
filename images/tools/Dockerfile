@@ -84,3 +84,5 @@ RUN pip install --no-cache-dir pymongo
 ARG MONGO_SPARK_VERSION=11.1.0
 COPY --chown=student:student --chmod=755 install_mongo_connector.sh /tmp/install_mongo_connector.sh
 RUN /tmp/install_mongo_connector.sh ${MONGO_SPARK_VERSION} && rm -f /tmp/install_mongo_connector.sh
+
+RUN pip install --no-cache-dir cassandra-driver

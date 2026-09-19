@@ -16,9 +16,14 @@ case "$cmd" in
           docker compose exec -T tools spark-submit scripts/load_sample_hive.py 2>&1 | grep -E '^LOADED|Exception|Caused by' ;;
   load-sql)
           docker compose exec -T tools python3 scripts/load_sample_sql.py ;;
+  load-mongo)
+          docker compose exec -T tools python3 scripts/load_sample_mongo.py ;;
+  load-cassandra)
+          docker compose exec -T cassandra bash /scripts/init.sh
+          docker compose exec -T tools python3 scripts/load_sample_cassandra.py ;;
   reset)  printf 'This DELETES all data in this project (HDFS, Hive metadata). Type yes to continue: '
           read -r ans
           [ "$ans" = "yes" ] || { echo "Cancelled."; exit 1; }
           docker compose down -v ;;
-  *)      echo "Usage: sh scripts/platform.sh {init|up|stop|status|shell|data|load-sample|load-sql|reset}" ;;
+  *)      echo "Usage: sh scripts/platform.sh {init|up|stop|status|shell|data|load-sample|load-sql|load-mongo|load-cassandra|reset}" ;;
 esac
