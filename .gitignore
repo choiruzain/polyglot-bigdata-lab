@@ -1,0 +1,10 @@
+# secrets and local config: never commit
+.env
+# build and download artifacts
+downloads/
+target/
+project/target/
+# notebooks and OS noise
+.ipynb_checkpoints/
+.DS_Store
+*.log
