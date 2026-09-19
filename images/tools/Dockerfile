@@ -24,3 +24,5 @@ RUN set -eux; \
 ENV SPARK_HOME=/opt/spark
 ENV PATH="/opt/spark/bin:${PATH}"
 ENV PYSPARK_PYTHON=python3
+
+RUN mkdir -p /home/student/.ivy2
