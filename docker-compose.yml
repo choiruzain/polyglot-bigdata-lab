@@ -286,6 +286,38 @@ services:
       start_period: 15s
     restart: "no"
 
+  trino:
+    image: trinodb/trino:483
+    profiles: ["trino"]
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
+      MONGO_PASSWORD: ${MONGO_STUDENT_PASSWORD:-}
+      CASSANDRA_PASSWORD: ${CASSANDRA_STUDENT_PASSWORD:-}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+      mysql:
+        condition: service_healthy
+        required: false
+      mongo:
+        condition: service_healthy
+        required: false
+      cassandra:
+        condition: service_healthy
+        required: false
+      clickhouse:
+        condition: service_healthy
+        required: false
+    volumes:
+      - ./config/trino:/etc/trino:ro
+      - ./scripts/trino:/scripts:ro
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${TRINO_PORT:-8080}:8080"
+    restart: "no"
+
 volumes:
   metastore-db-data:
   namenode-data:

@@ -13,3 +13,4 @@ project/target/
 .metals/
 project/project/
 data/shop/
+config/trino/catalog/

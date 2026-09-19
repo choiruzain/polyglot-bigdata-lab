@@ -5,6 +5,7 @@ cmd="${1:-help}"
 case "$cmd" in
   init)   sh scripts/init-env.sh ;;
   up)     [ -f .env ] || sh scripts/init-env.sh
+          sh scripts/make_trino_catalogs.sh
           docker compose up -d --build --wait ;;
   stop)   docker compose stop ;;
   status) docker compose ps --format 'table {{.Service}}\t{{.Status}}\t{{.Ports}}'
