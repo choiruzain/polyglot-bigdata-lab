@@ -86,3 +86,10 @@ COPY --chown=student:student --chmod=755 install_mongo_connector.sh /tmp/install
 RUN /tmp/install_mongo_connector.sh ${MONGO_SPARK_VERSION} && rm -f /tmp/install_mongo_connector.sh
 
 RUN pip install --no-cache-dir cassandra-driver
+
+# Neo4j Spark Connector (jars resolved once at build time)
+ARG NEO4J_SPARK_VERSION=6.0.0_for_spark_4
+COPY --chown=student:student --chmod=755 install_neo4j_connector.sh /tmp/install_neo4j_connector.sh
+RUN /tmp/install_neo4j_connector.sh org.neo4j:neo4j-connector-apache-spark_2.13:${NEO4J_SPARK_VERSION} && rm -f /tmp/install_neo4j_connector.sh
+
+RUN pip install --no-cache-dir neo4j

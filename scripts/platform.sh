@@ -21,9 +21,11 @@ case "$cmd" in
   load-cassandra)
           docker compose exec -T cassandra bash /scripts/init.sh
           docker compose exec -T tools python3 scripts/load_sample_cassandra.py ;;
+  load-neo4j)
+          docker compose exec -T tools python3 scripts/load_sample_neo4j.py ;;
   reset)  printf 'This DELETES all data in this project (HDFS, Hive metadata). Type yes to continue: '
           read -r ans
           [ "$ans" = "yes" ] || { echo "Cancelled."; exit 1; }
           docker compose down -v ;;
-  *)      echo "Usage: sh scripts/platform.sh {init|up|stop|status|shell|data|load-sample|load-sql|load-mongo|load-cassandra|reset}" ;;
+  *)      echo "Usage: sh scripts/platform.sh {init|up|stop|status|shell|data|load-sample|load-sql|load-mongo|load-cassandra|load-neo4j|reset}" ;;
 esac
