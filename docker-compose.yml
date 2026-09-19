@@ -4,6 +4,12 @@ x-hadoop: &hadoop
   profiles: ["bigdata-lite", "bigdata-full"]
   restart: "no"
 
+x-hive: &hive
+  build: ./images/hive
+  image: dataplatform/hive:local
+  profiles: ["bigdata-lite", "bigdata-full"]
+  restart: "no"
+
 services:
   metastore-db:
     image: postgres:18.6
@@ -59,6 +65,31 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+
+  metastore:
+    <<: *hive
+    hostname: metastore
+    command: ["/opt/hive/entrypoint.sh", "metastore"]
+    depends_on:
+      metastore-db:
+        condition: service_healthy
+      namenode:
+        condition: service_healthy
+      datanode:
+        condition: service_healthy
+    environment:
+      METASTORE_DB_PASSWORD: ${METASTORE_DB_PASSWORD:?run scripts/init-env.sh first}
+      HADOOP_HEAPSIZE_MAX: 768m
+    volumes:
+      - ./config/hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+      - ./config/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./config/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9083'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 40s
 
 volumes:
   metastore-db-data:
