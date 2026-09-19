@@ -116,6 +116,25 @@ services:
       retries: 24
       start_period: 60s
 
+  tools:
+    build: ./images/tools
+    image: dataplatform/tools:local
+    profiles: ["bigdata-lite", "bigdata-full"]
+    hostname: tools
+    init: true
+    command: ["sleep", "infinity"]
+    depends_on:
+      metastore:
+        condition: service_healthy
+    environment:
+      HADOOP_USER_NAME: student
+      HADOOP_CONF_DIR: /opt/hadoop-conf
+    volumes:
+      - ./config/hadoop:/opt/hadoop-conf:ro
+      - ./config/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - ./notebooks:/home/student/notebooks
+    restart: "no"
+
 volumes:
   metastore-db-data:
   namenode-data:
