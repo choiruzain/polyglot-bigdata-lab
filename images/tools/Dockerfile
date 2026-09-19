@@ -32,3 +32,16 @@ RUN python3 -m venv /home/student/venv \
 RUN ln -s "$(ls /opt/spark/python/lib/py4j-*-src.zip | head -n1)" /opt/spark/python/lib/py4j-src.zip
 ENV PATH="/home/student/venv/bin:${PATH}"
 ENV PYTHONPATH="/opt/spark/python:/opt/spark/python/lib/py4j-src.zip"
+
+# Bake the Hive 4.1.0 metastore client jars into the image: no download at run time, works offline
+USER root
+RUN mkdir /opt/hive-client && chown student:student /opt/hive-client
+USER student
+COPY --chown=student:student resolve_hive_client.py /tmp/resolve_hive_client.py
+RUN set -eux; \
+    spark-submit /tmp/resolve_hive_client.py || true; \
+    n="$(ls /home/student/.ivy2.5.2/jars/*.jar | wc -l)"; \
+    echo "resolved jars: ${n}"; \
+    test "${n}" -gt 200; \
+    cp /home/student/.ivy2.5.2/jars/*.jar /opt/hive-client/; \
+    rm -rf /home/student/.ivy2.5.2/* /tmp/resolve_hive_client.py /tmp/hsperfdata_student
