@@ -134,6 +134,8 @@ services:
       - ./config/hadoop:/opt/hadoop-conf:ro
       - ./config/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
       - ./notebooks:/home/student/notebooks
+      - ./data:/home/student/data
+      - ./scripts:/home/student/scripts:ro
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${JUPYTER_PORT:-8888}:8888"
       - "${BIND_ADDRESS:-127.0.0.1}:${SPARK_UI_PORT:-4040}:4040"

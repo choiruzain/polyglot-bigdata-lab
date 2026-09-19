@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+set -eu
+cd "$(dirname "$0")/.."
+cmd="${1:-help}"
+case "$cmd" in
+  init)   sh scripts/init-env.sh ;;
+  up)     [ -f .env ] || sh scripts/init-env.sh
+          docker compose up -d --build --wait ;;
+  stop)   docker compose stop ;;
+  status) docker compose ps --format 'table {{.Service}}\t{{.Status}}\t{{.Ports}}'
+          docker stats --no-stream --format 'table {{.Name}}\t{{.MemUsage}}' | grep -E 'NAME|dataplatform' ;;
+  shell)  docker compose exec tools bash ;;
+  data)   docker compose exec -T tools python3 scripts/make_sample_data.py data/shop ;;
+  load-sample)
+          sh scripts/platform.sh data
+          docker compose exec -T tools spark-submit scripts/load_sample_hive.py 2>&1 | grep -E '^LOADED|Exception|Caused by' ;;
+  reset)  printf 'This DELETES all data in this project (HDFS, Hive metadata). Type yes to continue: '
+          read -r ans
+          [ "$ans" = "yes" ] || { echo "Cancelled."; exit 1; }
+          docker compose down -v ;;
+  *)      echo "Usage: sh scripts/platform.sh {init|up|stop|status|shell|data|load-sample|reset}" ;;
+esac

@@ -12,3 +12,4 @@ project/target/
 .bloop/
 .metals/
 project/project/
+data/shop/
