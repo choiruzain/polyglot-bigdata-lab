@@ -45,3 +45,18 @@ RUN set -eux; \
     test "${n}" -gt 200; \
     cp /home/student/.ivy2.5.2/jars/*.jar /opt/hive-client/; \
     rm -rf /home/student/.ivy2.5.2/* /tmp/resolve_hive_client.py /tmp/hsperfdata_student
+
+# sbt for compiling Scala Spark jobs
+USER root
+RUN mkdir /opt/sbt && chown student:student /opt/sbt
+USER student
+ARG SBT_VERSION=1.12.14
+ARG SBT_URL=https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}
+RUN set -eux; \
+    curl -fsSL -o /tmp/sbt.tgz "${SBT_URL}/sbt-${SBT_VERSION}.tgz"; \
+    curl -fsSL -o /tmp/sbt.sha "${SBT_URL}/sbt-${SBT_VERSION}.tgz.sha256"; \
+    echo "$(grep -oE '[0-9a-fA-F]{64}' /tmp/sbt.sha | head -n1)  /tmp/sbt.tgz" | sha256sum -c -; \
+    tar -xzf /tmp/sbt.tgz -C /opt/sbt --strip-components=1; \
+    rm -f /tmp/sbt.tgz /tmp/sbt.sha
+ENV PATH="/opt/sbt/bin:${PATH}"
+ENV SBT_OPTS="-Xmx1g"

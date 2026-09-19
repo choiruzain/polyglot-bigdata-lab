@@ -8,3 +8,7 @@ project/target/
 .ipynb_checkpoints/
 .DS_Store
 *.log
+.bsp/
+.bloop/
+.metals/
+project/project/
