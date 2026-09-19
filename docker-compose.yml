@@ -122,18 +122,28 @@ services:
     profiles: ["bigdata-lite", "bigdata-full"]
     hostname: tools
     init: true
-    command: ["sleep", "infinity"]
+    command: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--notebook-dir=/home/student/notebooks"]
     depends_on:
       metastore:
         condition: service_healthy
     environment:
       HADOOP_USER_NAME: student
       HADOOP_CONF_DIR: /opt/hadoop-conf
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN:?run scripts/init-env.sh first}
     volumes:
       - ./config/hadoop:/opt/hadoop-conf:ro
       - ./config/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
       - ./notebooks:/home/student/notebooks
       - tools-ivy:/home/student/.ivy2
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${JUPYTER_PORT:-8888}:8888"
+      - "${BIND_ADDRESS:-127.0.0.1}:${SPARK_UI_PORT:-4040}:4040"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8888'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     restart: "no"
 
 volumes:

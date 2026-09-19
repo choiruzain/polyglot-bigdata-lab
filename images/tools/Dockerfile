@@ -26,3 +26,9 @@ ENV PATH="/opt/spark/bin:${PATH}"
 ENV PYSPARK_PYTHON=python3
 
 RUN mkdir -p /home/student/.ivy2
+
+RUN python3 -m venv /home/student/venv \
+ && /home/student/venv/bin/pip install --no-cache-dir jupyterlab pandas pyarrow numpy matplotlib
+RUN ln -s "$(ls /opt/spark/python/lib/py4j-*-src.zip | head -n1)" /opt/spark/python/lib/py4j-src.zip
+ENV PATH="/home/student/venv/bin:${PATH}"
+ENV PYTHONPATH="/opt/spark/python:/opt/spark/python/lib/py4j-src.zip"
