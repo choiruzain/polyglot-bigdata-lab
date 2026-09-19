@@ -1,0 +1,5 @@
+<clickhouse>
+  <!-- Keep ClickHouse small enough for an 8 GB student laptop -->
+  <max_server_memory_usage>1500000000</max_server_memory_usage>
+  <mark_cache_size>134217728</mark_cache_size>
+</clickhouse>
