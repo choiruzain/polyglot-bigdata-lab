@@ -12,6 +12,8 @@ case "${1:-}" in
       schematool -dbType postgres -initSchema
     fi
     exec hive --service metastore ;;
+  hiveserver2)
+    exec hive --service hiveserver2 ;;
   *)
     exec "$@" ;;
 esac

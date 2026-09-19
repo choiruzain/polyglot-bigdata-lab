@@ -43,3 +43,18 @@ ENV HIVE_HOME=/opt/hive
 ENV PATH="/opt/hive/bin:/opt/hadoop/bin:${PATH}"
 
 COPY --chown=hive:hive --chmod=755 entrypoint.sh /opt/hive/entrypoint.sh
+
+USER root
+RUN mkdir /opt/tez && chown hive:hive /opt/tez
+USER hive
+
+ARG TEZ_VERSION=0.10.5
+ARG TEZ_URL=https://downloads.apache.org/tez/${TEZ_VERSION}
+RUN set -eux; \
+    curl -fsSL -o /tmp/tez.tgz "${TEZ_URL}/apache-tez-${TEZ_VERSION}-bin.tar.gz"; \
+    curl -fsSL -o /tmp/tez.sha "${TEZ_URL}/apache-tez-${TEZ_VERSION}-bin.tar.gz.sha512"; \
+    echo "$(grep -oE '[0-9a-fA-F]{128}' /tmp/tez.sha | head -n1)  /tmp/tez.tgz" | sha512sum -c -; \
+    tar -xzf /tmp/tez.tgz -C /opt/tez --strip-components=1; \
+    rm -f /tmp/tez.tgz /tmp/tez.sha; \
+    rm -rf /opt/tez/lib/hadoop-common-* /opt/tez/lib/hadoop-hdfs-* /opt/tez/lib/hadoop-mapreduce-client-* /opt/tez/lib/hadoop-yarn-* /opt/tez/lib/hadoop-auth-* /opt/tez/lib/hadoop-annotations-* /opt/tez/lib/slf4j-*; \
+    mkdir -p /opt/tez/conf

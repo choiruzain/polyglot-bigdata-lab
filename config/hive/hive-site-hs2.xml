@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<configuration>
+  <property><name>hive.metastore.uris</name><value>thrift://metastore:9083</value></property>
+  <property><name>hive.metastore.warehouse.dir</name><value>hdfs://namenode:8020/user/hive/warehouse</value></property>
+  <property><name>hive.server2.thrift.bind.host</name><value>0.0.0.0</value></property>
+  <property><name>hive.server2.thrift.port</name><value>10000</value></property>
+  <property><name>hive.server2.authentication</name><value>NONE</value></property>
+  <property><name>hive.server2.enable.doAs</name><value>false</value></property>
+  <property><name>hive.execution.engine</name><value>tez</value></property>
+</configuration>

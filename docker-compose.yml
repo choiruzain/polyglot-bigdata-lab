@@ -91,6 +91,31 @@ services:
       retries: 18
       start_period: 40s
 
+  hiveserver2:
+    <<: *hive
+    hostname: hiveserver2
+    command: ["/opt/hive/entrypoint.sh", "hiveserver2"]
+    depends_on:
+      metastore:
+        condition: service_healthy
+    environment:
+      HADOOP_HEAPSIZE_MAX: 1536m
+      TEZ_HOME: /opt/tez
+      HADOOP_CLASSPATH: "/opt/tez/*:/opt/tez/lib/*:/opt/tez/conf"
+    volumes:
+      - ./config/hive/hive-site-hs2.xml:/opt/hive/conf/hive-site.xml:ro
+      - ./config/tez/tez-site.xml:/opt/tez/conf/tez-site.xml:ro
+      - ./config/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./config/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${HIVESERVER2_PORT:-10000}:10000"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/10000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 60s
+
 volumes:
   metastore-db-data:
   namenode-data:
