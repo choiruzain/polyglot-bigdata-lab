@@ -6,7 +6,7 @@ case "$cmd" in
   init)   sh scripts/init-env.sh ;;
   up)     [ -f .env ] || sh scripts/init-env.sh
           sh scripts/make_trino_catalogs.sh
-          docker compose up -d --build --wait ;;
+          bash scripts/up.sh ;;
   stop)   docker compose stop ;;
   status) docker compose ps --format 'table {{.Service}}\t{{.Status}}\t{{.Ports}}'
           docker stats --no-stream --format 'table {{.Name}}\t{{.MemUsage}}' | grep -E 'NAME|dataplatform' ;;
