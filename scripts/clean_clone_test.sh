@@ -117,6 +117,10 @@ run docker compose exec -T tools jupyter nbconvert --to notebook --execute --out
 has "starter notebook runs end to end"        'Writing [0-9]+ bytes'
 run docker compose exec -T tools spark-submit notebooks/t3_hive.py
 has "Spark reads Hive tables (t3)"            'ORDERS 20000'
+run docker compose exec -T tools sh -c 'cd notebooks/scala-hello && sbt -batch package'
+has "Scala example compiles with sbt"          '\[success\]'
+run docker compose exec -T tools spark-submit --class HelloScala notebooks/scala-hello/target/scala-2.13/hello-scala_2.13-0.1.0.jar
+has "Scala example runs on Spark and reads Hive"  'SCALA_ROWS .*Books,18'
 run sh scripts/platform.sh load-sql
 has "PostgreSQL loaded"      'PG_LOADED order_items 59858'
 has "MySQL loaded"           'MY_LOADED order_items 59858'

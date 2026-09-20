@@ -140,6 +140,17 @@ sh scripts/pin_bases.sh              # pin (or refresh) the Java base images by 
 
 Run the clean-clone test after any change you plan to share. It refuses to run with uncommitted changes or while your own platform is running.
 
+## Scala
+
+Jupyter here runs Python. Scala runs as a compiled Spark job, using sbt, which is already in the notebook container. `notebooks/scala-hello` is a small job that reads the shop data from Hive, so it needs the full platform (Option 2). Load the data first with `sh scripts/platform.sh load-sample`. The first compile downloads the Scala compiler, so it needs internet and takes a few minutes:
+
+```
+docker compose exec tools sh -c 'cd notebooks/scala-hello && sbt -batch package'
+docker compose exec tools spark-submit --class HelloScala notebooks/scala-hello/target/scala-2.13/hello-scala_2.13-0.1.0.jar
+```
+
+Look for the `SCALA_ROWS` line: one row for each product category. Copy the folder to start a project of your own.
+
 ## Tips
 
 Run a one-off Hive query from the command line. Beeline may print harmless logging warnings before the result:

@@ -159,6 +159,17 @@ Add this line to `.env`, with the full path to your folder, then run `sh scripts
 NOTEBOOKS_DIR=/full/path/to/your/labs
 ```
 
+### 7. Run the Scala example (optional)
+
+Jupyter here runs Python. Scala runs as a compiled Spark job, using sbt, which is already in the notebook container. `notebooks/scala-hello` is a small job that reads the shop data from Hive, so load the data first (step 5, `load-sample`). This example needs the full platform, so it does not run in Option 1. The first compile downloads the Scala compiler, so it needs internet and takes a few minutes:
+
+```
+docker compose exec tools sh -c 'cd notebooks/scala-hello && sbt -batch package'
+docker compose exec tools spark-submit --class HelloScala notebooks/scala-hello/target/scala-2.13/hello-scala_2.13-0.1.0.jar
+```
+
+Look for the `SCALA_ROWS` line: one row for each product category. Copy the folder to start a project of your own.
+
 ### Stop, restart, erase
 
 ```
