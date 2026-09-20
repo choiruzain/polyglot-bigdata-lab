@@ -113,6 +113,10 @@ ok "platform.sh up: every container healthy"
 echo "== 5. Load every engine and check the totals"
 run sh scripts/platform.sh load-sample
 has "sample data generated and loaded into Hive"  'LOADED order_items 59858'
+run docker compose exec -T tools jupyter nbconvert --to notebook --execute --output-dir /tmp notebooks/01_hello_spark.ipynb
+has "starter notebook runs end to end"        'Writing [0-9]+ bytes'
+run docker compose exec -T tools spark-submit notebooks/t3_hive.py
+has "Spark reads Hive tables (t3)"            'ORDERS 20000'
 run sh scripts/platform.sh load-sql
 has "PostgreSQL loaded"      'PG_LOADED order_items 59858'
 has "MySQL loaded"           'MY_LOADED order_items 59858'
