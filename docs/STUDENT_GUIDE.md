@@ -29,15 +29,15 @@ docker compose version
 Step 0 (once): get the project and build the image. This takes a while the first time and downloads several GB.
 
 ```
-git clone <REPO-URL>
-cd teaching-data-platform
-docker build -t teaching-data-platform-tools images/tools
+git clone https://github.com/choiruzain/polyglot-bigdata-lab.git
+cd polyglot-bigdata-lab
+docker build -t polyglot-bigdata-lab images/tools
 ```
 
 ### 1. Create a Docker network
 
 ```
-docker network create teaching-data-platform
+docker network create polyglot-bigdata-lab
 ```
 
 If it says the network already exists, that is fine.
@@ -47,7 +47,7 @@ If it says the network already exists, that is fine.
 Change **`<YOUR-LOCAL-FOLDER>`** to the folder on your computer that contains your notebook files.
 
 ```
-docker run --rm --network teaching-data-platform -v <YOUR-LOCAL-FOLDER>:/home/student/notebooks -p 8888:8888 -p 4040:4040 teaching-data-platform-tools
+docker run --rm --network polyglot-bigdata-lab -v <YOUR-LOCAL-FOLDER>:/home/student/notebooks -p 8888:8888 -p 4040:4040 polyglot-bigdata-lab
 ```
 
 Examples of a folder:
@@ -72,11 +72,11 @@ Press `Ctrl+C` in the terminal. Your notebooks stay in your local folder. Anythi
 ### 1. Get the project (skip if you already did)
 
 ```
-git clone <REPO-URL>
-cd teaching-data-platform
+git clone https://github.com/choiruzain/polyglot-bigdata-lab.git
+cd polyglot-bigdata-lab
 ```
 
-Windows: keep the project inside the Ubuntu (WSL) file system, for example `~/teaching-data-platform`, not under `C:\`.
+Windows: keep the project inside the Ubuntu (WSL) file system, for example `~/polyglot-bigdata-lab`, not under `C:\`.
 
 ### 2. Start it
 
