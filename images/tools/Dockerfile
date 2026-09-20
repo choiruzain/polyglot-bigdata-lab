@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:17-jdk@sha256:bc033b57e11b773c3043babfd664e7a5ef110805548b921cbfc3e8c67a0725d6
 
 ARG SPARK_VERSION=4.1.3
 ARG SPARK_URL=https://downloads.apache.org/spark/spark-${SPARK_VERSION}
