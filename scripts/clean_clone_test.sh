@@ -41,7 +41,7 @@ has() {  # has "description" "regex"  -> checks the output of the last run
   if printf '%s\n' "$LAST" | grep -qE "$2"; then
     printf 'PASS  %s\n' "$1"; pass=$((pass + 1))
   else
-    printf 'FAIL  %s\n' "$1"; printf '%s\n' "$LAST" | tail -n 6 | sed 's/^/        /'; fail=$((fail + 1))
+    printf 'FAIL  %s\n' "$1"; printf '%s\n' "$LAST" | grep -v -E '^[[:space:]]+at |^[[:space:]]+\.\.\. ' | tail -n 8 | sed 's/^/        /'; fail=$((fail + 1))
   fi
 }
 progress_run() {  # progress_run LOGFILE command...   (prints a status line while a long step runs)
@@ -60,6 +60,17 @@ ok()  { printf 'PASS  %s\n' "$1"; pass=$((pass + 1)); }
 bad() { printf 'FAIL  %s\n' "$1"; fail=$((fail + 1)); }
 
 echo "Working folder and logs: $work"
+hive_count() {  # hive_count "description": select count(*) from shop.orders through HiveServer2
+  run docker compose exec -T hiveserver2 beeline -u jdbc:hive2://localhost:10000 -n student --silent=true --outputformat=csv2 -e "select count(*) from shop.orders"
+  if printf '%s\n' "$LAST" | grep -qE '(^|[^0-9])20000([^0-9]|$)'; then
+    ok "$1"
+  else
+    bad "$1"
+    printf '%s\n' "$LAST" | grep -v -E '^[[:space:]]+at |^[[:space:]]+\.\.\. |SLF4J' | tail -n 8 | sed 's/^/        /'
+    echo "        --- errors in the HiveServer2 log:"
+    docker compose exec -T hiveserver2 sh -c 'grep -E "Error|Exception|Caused by" /tmp/hive/hive.log | tail -n 6' 2>&1 | cut -c1-200 | sed 's/^/        /'
+  fi
+}
 echo "== 1. Clone what is committed"
 git clone -q "$src" "$clone" || { echo "git clone failed"; exit 1; }
 cd "$clone" || exit 1
@@ -129,14 +140,12 @@ has "Trino sees all five databases"           'clickhouse.order_items.*59858'
 run docker compose exec -T trino trino --output-format CSV --file /scripts/federated.sql
 has "Trino federated query (first city)"      'Lima.*2470520.84'
 has "Trino federated query (last city)"       'Toronto.*2667785.13'
-run docker compose exec -T hiveserver2 beeline -u jdbc:hive2://localhost:10000 -n student --silent=true -e "select count(*) from shop.orders"
-has "HiveServer2 answers SQL"                 '20000'
+hive_count "HiveServer2 answers SQL"
 
 echo "== 7. Stop everything, start it again (a laptop that slept overnight)"
 docker compose stop >/dev/null 2>&1
 progress_run "$work/up2.log" sh scripts/platform.sh up && ok "restart: every container healthy again" || { bad "restart: platform.sh up failed"; tail -n 15 "$work/up2.log"; }
-run docker compose exec -T hiveserver2 beeline -u jdbc:hive2://localhost:10000 -n student --silent=true -e "select count(*) from shop.orders"
-has "Hive data survived the restart"          '20000'
+hive_count "Hive data survived the restart"
 run docker compose exec -T tools sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U student -d shop -Atc "select count(*) from orders"'
 has "PostgreSQL data survived the restart"    '^20000$'
 
