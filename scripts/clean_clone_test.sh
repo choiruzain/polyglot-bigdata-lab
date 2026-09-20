@@ -106,7 +106,7 @@ fi
 
 echo "== 4. sh scripts/platform.sh up"
 progress_run "$work/up.log" sh scripts/platform.sh up || {
-  echo "FAIL: platform.sh up did not finish healthy. Last lines:"; tail -n 25 "$work/up.log"
+  echo "FAIL: platform.sh up did not finish healthy. Last lines:"; tail -n 45 "$work/up.log"
   echo "--- container states:"; docker compose ps -a; echo "(re-run with KEEP=1 to inspect the containers)"; exit 1; }
 ok "platform.sh up: every container healthy"
 
@@ -152,7 +152,7 @@ hive_count "HiveServer2 answers SQL"
 
 echo "== 7. Stop everything, start it again (a laptop that slept overnight)"
 docker compose stop >/dev/null 2>&1
-progress_run "$work/up2.log" sh scripts/platform.sh up && ok "restart: every container healthy again" || { bad "restart: platform.sh up failed"; tail -n 15 "$work/up2.log"; }
+progress_run "$work/up2.log" sh scripts/platform.sh up && ok "restart: every container healthy again" || { bad "restart: platform.sh up failed"; tail -n 45 "$work/up2.log"; }
 hive_count "Hive data survived the restart"
 run docker compose exec -T tools sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U student -d shop -Atc "select count(*) from orders"'
 has "PostgreSQL data survived the restart"    '^20000$'

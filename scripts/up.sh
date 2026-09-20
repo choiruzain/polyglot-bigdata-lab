@@ -8,6 +8,7 @@ port_in_use() { (exec 3<>"/dev/tcp/127.0.0.1/$1") >/dev/null 2>&1; }
 
 attempt=1
 max=10
+waited=0
 while :; do
   log="$(mktemp)"; rcfile="$(mktemp)"
   { docker compose up -d --build --wait; echo $? > "$rcfile"; } 2>&1 | tee "$log"
@@ -16,8 +17,24 @@ while :; do
 
   # Was it a busy port? Docker words this in two ways.
   port="$(grep -oE '(exposing port TCP|Bind for) [0-9.]+:[0-9]+' "$log" | tail -n 1 | sed -E 's/.*:([0-9]+)$/\1/')"
+  slow="$(grep -oE 'container [A-Za-z0-9_.-]+ is unhealthy' "$log" | tail -n 1 | awk '{print $2}')"
   rm -f "$log" "$rcfile"
-  if [ -z "$port" ]; then exit "$rc"; fi
+  if [ -z "$port" ]; then
+    # A slow start can be reported as "unhealthy" while the container is still starting: give it time.
+    if [ -n "$slow" ] && [ "$waited" -eq 0 ]; then
+      waited=1
+      echo; echo ">>> $slow is not healthy yet. Giving it up to 3 more minutes to finish starting..."
+      st="unknown"
+      for _ in $(seq 1 "${UP_WAIT_TRIES:-36}"); do
+        st="$(docker inspect -f '{{.State.Health.Status}}' "$slow" 2>/dev/null || echo gone)"
+        [ "$st" = "healthy" ] && break
+        sleep "${UP_WAIT_SLEEP:-5}"
+      done
+      if [ "$st" = "healthy" ]; then echo ">>> $slow is healthy now. Continuing."; echo; continue; fi
+      echo; echo "$slow is still not healthy. Its last log lines:"; docker logs --tail 25 "$slow" 2>&1 | sed 's/^/    /'
+    fi
+    exit "$rc"
+  fi
 
   var="$(grep -E "^[A-Z0-9_]*PORT=${port}\$" .env 2>/dev/null | head -n 1 | cut -d= -f1)"
   if [ -z "$var" ]; then
