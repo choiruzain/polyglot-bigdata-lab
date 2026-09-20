@@ -121,9 +121,20 @@ Three tools live in `scripts/`. Anyone can run them:
 sh scripts/check_env.sh            # every setting and script the platform needs is in the repository
 bash scripts/clean_clone_test.sh   # clones the committed repo, starts it, loads every engine, checks the totals
 sh scripts/mem.sh                  # total memory used by the running containers
+sh scripts/pin_bases.sh              # pin (or refresh) the Java base images by digest
 ```
 
 Run the clean-clone test after any change you plan to share. It refuses to run with uncommitted changes or while your own platform is running.
+
+## Tips
+
+Run a one-off Hive query from the command line. Beeline may print harmless logging warnings before the result:
+
+```
+docker compose exec -T hiveserver2 beeline -u jdbc:hive2://localhost:10000 -n student -e "select count(*) from shop.orders"
+```
+
+For an interactive session, use Spark SQL in JupyterLab instead. The interactive beeline prompt draws its tables staggered on some terminals.
 
 ## Known limitations
 
