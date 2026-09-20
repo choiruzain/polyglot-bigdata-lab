@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Polyglot Big Data Lab"
+abstract: "A Docker lab for teaching big data. It runs Hadoop, Hive, Spark and Trino, plus PostgreSQL, MySQL, MongoDB, Cassandra, Neo4j, ClickHouse and DuckDB, all loaded with one shared dataset so each engine can be compared on the same question."
+authors:
+  - family-names: "Zain"
+    given-names: "Choiru"
+    orcid: "https://orcid.org/0000-0001-8012-7340"
+version: "1.0.0"
+date-released: "2026-09-21"
+license: MIT
+repository-code: "https://github.com/choiruzain/polyglot-bigdata-lab"
+url: "https://github.com/choiruzain/polyglot-bigdata-lab"
+keywords:
+  - big data
+  - teaching
+  - docker
+  - hadoop
+  - spark
+  - hive
+  - trino
+  - nosql
+  - education
