@@ -41,6 +41,14 @@ for f in $refs; do
   fi
 done
 
+# Starter notebooks must ship without run results. In JupyterLab: Edit > Clear Outputs of All Cells, then save.
+for nb in notebooks/*.ipynb; do
+  [ -f "$nb" ] || continue
+  if grep -qE '"execution_count": [0-9]+' "$nb"; then
+    echo "NOTEBOOK HAS RUN RESULTS: $nb (in JupyterLab: Edit > Clear Outputs of All Cells, then save)"; bad=1
+  fi
+done
+
 # Placeholders that nothing uses are probably stale.
 for n in $(grep -E '=CHANGE_ME$' .env.example | cut -d= -f1); do
   grep -qF "\${$n" docker-compose.yml || echo "note: $n=CHANGE_ME is in .env.example but docker-compose.yml never uses it"
