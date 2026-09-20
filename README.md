@@ -43,6 +43,20 @@ docker run --rm --network polyglot-bigdata-lab -v <YOUR-LOCAL-FOLDER>:/home/stud
 
 Press `Ctrl+C` to stop. Your notebooks stay in your folder.
 
+**Port 8888 already in use?** Another subject's container may be holding it, and `docker run` then stops with "port is already allocated". See what holds it:
+
+```
+docker ps --format '{{.Names}}   {{.Image}}   {{.Ports}}' | grep ':8888->'
+```
+
+Stop it if you recognise it and no longer need it (a container that was started with `--rm` is deleted when it stops):
+
+```
+docker stop $(docker ps --format '{{.ID}} {{.Ports}}' | grep ':8888->' | cut -d' ' -f1)
+```
+
+Or leave it alone and use another port: change `-p 8888:8888` to `-p 8889:8888` in the run command, and open <http://localhost:8889>. If the first command prints nothing, a program on your computer uses the port. On Mac and Linux, `lsof -nP -iTCP:8888 -sTCP:LISTEN` names it.
+
 ### Option 2: Full platform (Hadoop, Hive, Spark and the databases)
 
 ```

@@ -65,6 +65,28 @@ While a Spark session is running, its web page is at <http://localhost:4040>.
 
 Press `Ctrl+C` in the terminal. Your notebooks stay in your local folder. Anything you saved outside `/home/student/notebooks` is deleted when the container stops.
 
+### If port 8888 is already in use
+
+Another subject's notebook container may be using port 8888 without you realising it. Then `docker run` stops with "port is already allocated". First see what holds the port:
+
+```
+docker ps --format '{{.Names}}   {{.Image}}   {{.Ports}}' | grep ':8888->'
+```
+
+If it lists a container you recognise and no longer need, stop it. Stopping deletes nothing, unless that container was started with `--rm`:
+
+```
+docker stop $(docker ps --format '{{.ID}} {{.Ports}}' | grep ':8888->' | cut -d' ' -f1)
+```
+
+Or leave that container alone and use a different port. In the `docker run` command, change `-p 8888:8888` to `-p 8889:8888`, then open <http://localhost:8889\> instead.
+
+If the first command prints nothing, the port belongs to a program on your computer, not to Docker. On Mac and Linux, this names it:
+
+```
+lsof -nP -iTCP:8888 -sTCP:LISTEN
+```
+
 ---
 
 ## Option 2: Full platform
@@ -149,7 +171,8 @@ sh scripts/platform.sh reset     # ERASES all data in the platform (asks you to 
 
 ## If something goes wrong
 
-- **"port is already allocated":** another program uses that port. In `.env`, change the number of the port it names (for example `JUPYTER_PORT=8890`), then run `sh scripts/platform.sh up` again.
+- **"port is already allocated" (Option 1):** see "If port 8888 is already in use" above.
+- **"port is already allocated" (Option 2):** `sh scripts/platform.sh up` moves a busy port to the next free one by itself and says which. Run `grep -E '^JUPYTER_PORT=' .env` to see the port to open for JupyterLab. If it says a port is not set in `.env`, add a line for it, for example `NAMENODE_UI_PORT=9871`.
 - **After restarting your computer or Docker, things fail with "unknown host" or a service is missing:** containers do not restart by themselves. Run `sh scripts/platform.sh up`.
 - **A container disappears, or things become very slow:** you are probably out of memory. Switch off modules you do not need (step 4), or give Docker more memory.
 - **Cassandra and Neo4j are slow to start.** Wait for `sh scripts/platform.sh up` to finish before you load data.
