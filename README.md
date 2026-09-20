@@ -2,9 +2,9 @@
 
 **Nine engines. One dataset. One number: 19,252,162.85.**
 
-A Docker lab for teaching big data. It runs Hadoop (HDFS), Hive, Spark and Trino, plus PostgreSQL, MySQL, MongoDB, Cassandra, Neo4j, ClickHouse and DuckDB. Every engine is loaded with the same small online-shop dataset, and every engine answers the same revenue question with the same total, so students can compare how each one works.
+A Docker lab for teaching big data. It runs Hadoop (HDFS), Hive, Spark and Trino, plus PostgreSQL, MySQL, MongoDB, Cassandra, Neo4j, ClickHouse and DuckDB. Every engine is loaded with the same small online-shop dataset, and every engine answers the same revenue question with the same total, so you can compare how each one works.
 
-Full step-by-step instructions, troubleshooting and the list of modules are in [docs/STUDENT_GUIDE.md](docs/STUDENT_GUIDE.md).
+Full step-by-step instructions, troubleshooting and the list of modules are in [docs/GUIDE.md](docs/GUIDE.md).
 
 ## Quick start
 
@@ -110,12 +110,12 @@ config/              Hadoop, Hive, Tez, Spark, ClickHouse and Trino settings
 scripts/             platform.sh (start, stop, load, reset) and the data loaders
 notebooks/           example notebooks and test scripts
 data/                sample data is generated here (not committed)
-docs/                STUDENT_GUIDE.md
+docs/                GUIDE.md
 ```
 
-## For instructors
+## Checks you can run
 
-Three maintenance tools live in `scripts/`:
+Three tools live in `scripts/`. Anyone can run them:
 
 ```
 sh scripts/check_env.sh            # every setting and script the platform needs is in the repository
@@ -123,7 +123,7 @@ bash scripts/clean_clone_test.sh   # clones the committed repo, starts it, loads
 sh scripts/mem.sh                  # total memory used by the running containers
 ```
 
-Run the clean-clone test after every change that you plan to give to students. It refuses to run with uncommitted changes or while your own platform is running.
+Run the clean-clone test after any change you plan to share. It refuses to run with uncommitted changes or while your own platform is running.
 
 ## Known limitations
 

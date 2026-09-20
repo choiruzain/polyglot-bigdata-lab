@@ -1,4 +1,4 @@
-# Teaching Data Platform: Student Guide
+# Polyglot Big Data Lab: Guide
 
 Two ways to work. Pick one.
 

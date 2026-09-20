@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Clean-clone test: proves a student can go from "git clone" to a working platform.
+# Clean-clone test: proves anyone can go from "git clone" to a working platform.
 # It clones the COMMITTED repo into a temp folder, runs it as its own Compose project
 # ("cleanroom"), loads every engine and checks that each one reproduces the same revenue total.
 #
@@ -64,7 +64,7 @@ echo "== 1. Clone what is committed"
 git clone -q "$src" "$clone" || { echo "git clone failed"; exit 1; }
 cd "$clone" || exit 1
 
-echo "== 2. Student setup: copy the template, generate passwords"
+echo "== 2. Setup: copy the template, generate passwords"
 cp .env.example .env
 run sh scripts/init-env.sh
 left="$(grep -c '=CHANGE_ME$' .env || true)"

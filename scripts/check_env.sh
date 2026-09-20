@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Maintainer check: does .env.example cover every variable docker-compose.yml needs,
-# and is it free of real secrets? A gap only shows up for students, because the
+# and is it free of real secrets? A gap only shows up on a fresh clone, because the
 # maintainer's own .env already has every variable.
 cd "$(dirname "$0")/.." || exit 1
 bad=0
@@ -26,7 +26,7 @@ if git ls-files --error-unmatch .env >/dev/null 2>&1; then echo ".env is tracked
 grep -qx '.env' .gitignore 2>/dev/null || { echo ".gitignore does not list .env"; bad=1; }
 
 # Every script or config file the platform runs must be tracked by Git. A file that exists only on
-# the maintainer's machine works for them and fails for every student (this is how a missing
+# the maintainer's machine works for them and fails for everyone else (this is how a missing
 # scripts/init-env.sh once slipped through).
 refs="$(grep -ohE '(^|[^A-Za-z0-9_./-]|\./)(scripts|config|notebooks)/[A-Za-z0-9_./-]+\.(sh|py|sql|cql|cypher|js|xml|conf|properties|ipynb)' scripts/platform.sh docker-compose.yml 2>/dev/null | sed -E 's#^[^a-z]*##' | sort -u)"
 for f in $refs; do
