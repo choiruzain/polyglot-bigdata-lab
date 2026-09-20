@@ -58,3 +58,10 @@ RUN set -eux; \
     rm -f /tmp/tez.tgz /tmp/tez.sha; \
     rm -rf /opt/tez/lib/hadoop-common-* /opt/tez/lib/hadoop-hdfs-* /opt/tez/lib/hadoop-mapreduce-client-* /opt/tez/lib/hadoop-yarn-* /opt/tez/lib/hadoop-auth-* /opt/tez/lib/hadoop-annotations-* /opt/tez/lib/slf4j-*; \
     mkdir -p /opt/tez/conf
+
+# beeline wrapper: gives beeline a terminal so it works under "docker exec" and in scripts
+USER root
+RUN mkdir /opt/wrappers && chown hive:hive /opt/wrappers
+USER hive
+COPY --chown=hive:hive --chmod=755 beeline-wrapper.sh /opt/wrappers/beeline
+ENV PATH="/opt/wrappers:${PATH}"
