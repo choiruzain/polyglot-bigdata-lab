@@ -140,7 +140,7 @@ services:
     volumes:
       - ./config/hadoop:/opt/hadoop-conf:ro
       - ./config/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
-      - ./notebooks:/home/student/notebooks
+      - ${NOTEBOOKS_DIR:-./notebooks}:/home/student/notebooks
       - ./data:/home/student/data
       - ./scripts:/home/student/scripts:ro
     ports:

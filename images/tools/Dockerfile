@@ -27,6 +27,8 @@ ENV PYSPARK_PYTHON=python3
 
 RUN mkdir -p /home/student/.ivy2
 
+COPY constraints.txt /opt/constraints.txt
+ENV PIP_CONSTRAINT=/opt/constraints.txt
 RUN python3 -m venv /home/student/venv \
  && /home/student/venv/bin/pip install --no-cache-dir jupyterlab pandas pyarrow numpy matplotlib
 RUN ln -s "$(ls /opt/spark/python/lib/py4j-*-src.zip | head -n1)" /opt/spark/python/lib/py4j-src.zip
@@ -95,3 +97,10 @@ RUN /tmp/install_neo4j_connector.sh org.neo4j:neo4j-connector-apache-spark_2.13:
 RUN pip install --no-cache-dir neo4j
 
 RUN pip install --no-cache-dir clickhouse-connect "duckdb>=1.5,<2"
+
+# Standalone use ("docker run"): start JupyterLab in the mounted notebooks folder.
+# Compose overrides the command and sets its own generated token.
+RUN mkdir -p /home/student/notebooks
+ENV JUPYTER_TOKEN=student
+EXPOSE 8888 4040
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--notebook-dir=/home/student/notebooks"]
