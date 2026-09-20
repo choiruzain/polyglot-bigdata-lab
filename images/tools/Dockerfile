@@ -99,8 +99,9 @@ RUN pip install --no-cache-dir neo4j
 RUN pip install --no-cache-dir clickhouse-connect "duckdb>=1.5,<2"
 
 # Standalone use ("docker run"): start JupyterLab in the mounted notebooks folder.
-# Compose overrides the command and sets its own generated token.
-RUN mkdir -p /home/student/notebooks
-ENV JUPYTER_TOKEN=student
+# JupyterLab runs without a password, so the platform only ever publishes its port on localhost.
+# To require a password anyway, start the container with  -e NOTEBOOK_TOKEN=your-password
+RUN mkdir -p /home/student/notebooks /home/student/.jupyter \
+ && printf 'import os\nc.IdentityProvider.token = os.environ.get("NOTEBOOK_TOKEN", "")\n' > /home/student/.jupyter/jupyter_server_config.py
 EXPOSE 8888 4040
 CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--notebook-dir=/home/student/notebooks"]

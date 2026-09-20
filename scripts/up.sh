@@ -13,7 +13,12 @@ while :; do
   log="$(mktemp)"; rcfile="$(mktemp)"
   { docker compose up -d --build --wait; echo $? > "$rcfile"; } 2>&1 | tee "$log"
   rc="$(cat "$rcfile")"
-  if [ "$rc" -eq 0 ]; then rm -f "$log" "$rcfile"; exit 0; fi
+  if [ "$rc" -eq 0 ]; then
+    rm -f "$log" "$rcfile"
+    jp="$(grep -E '^JUPYTER_PORT=' .env 2>/dev/null | cut -d= -f2)"
+    echo; echo "JupyterLab is ready: http://127.0.0.1:${jp:-8888}"
+    exit 0
+  fi
 
   # Was it a busy port? Docker words this in two ways.
   port="$(grep -oE '(exposing port TCP|Bind for) [0-9.]+:[0-9]+' "$log" | tail -n 1 | sed -E 's/.*:([0-9]+)$/\1/')"

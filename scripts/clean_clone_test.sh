@@ -162,6 +162,25 @@ mem_line="$(sh scripts/mem.sh 2>&1)"; echo "        $mem_line"
 mib="$(printf '%s\n' "$mem_line" | sed -n 's/^now: \([0-9]*\) MiB.*/\1/p')"
 if [ -n "$mib" ] && [ "$mib" -lt 12288 ]; then ok "total memory is below 12 GB"; else bad "total memory is not below 12 GB ($mem_line)"; fi
 
+echo "== 8b. The notebook-only container (the second quick-start path)"
+run docker compose exec -T tools curl -s -o /dev/null -w '%{http_code}' http://localhost:8888/api/status
+has "JupyterLab in the platform opens without a password"  '^200$'
+run docker build -q -t cleanroom-notebook images/tools
+run docker run -d --rm --name cleanroom-notebook -p 127.0.0.1::8888 cleanroom-notebook
+nbport="$(docker port cleanroom-notebook 8888/tcp 2>/dev/null | head -n 1 | sed 's/.*://')"
+code="000"
+for _ in $(seq 1 45); do
+  code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${nbport:-0}/api/status" 2>/dev/null || true)"
+  [ "$code" = "200" ] && break
+  sleep 2
+done
+LAST="$code"
+has "notebook-only container opens without a password"  '^200$'
+run docker exec cleanroom-notebook python3 -c "from pyspark.sql import SparkSession; s = SparkSession.builder.master('local[1]').getOrCreate(); print('COUNT', s.range(10).count())"
+has "notebook-only container runs PySpark"  'COUNT 10'
+docker stop cleanroom-notebook >/dev/null 2>&1
+docker rmi cleanroom-notebook >/dev/null 2>&1
+
 if [ -z "${KEEP:-}" ]; then
   echo "== 9. Reset, then confirm nothing is left behind"
   printf 'yes\n' | sh scripts/platform.sh reset >/dev/null 2>&1
