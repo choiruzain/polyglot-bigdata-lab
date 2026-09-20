@@ -147,3 +147,7 @@ For an interactive session, use Spark SQL in JupyterLab instead. The interactive
 ## Third-party software
 
 This repository contains scripts and configuration only. Hadoop, Hive, Spark, Trino, PostgreSQL, MySQL, MongoDB, Cassandra, Neo4j, ClickHouse and DuckDB are downloaded at build time and keep their own licenses.
+
+## License
+
+The scripts, configuration and documentation in this repository are released under the MIT License (see [LICENSE](LICENSE)). The software they download and run keeps its own licenses, as described above.
