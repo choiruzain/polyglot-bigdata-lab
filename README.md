@@ -51,7 +51,7 @@ cd polyglot-bigdata-lab
 sh scripts/platform.sh up
 ```
 
-The first start builds the images and takes a long time. It creates a `.env` file with random passwords. Never share or commit `.env`.
+The first start builds the images. It took about 40 minutes on a fast connection, and later starts take a minute or two. It creates a `.env` file with random passwords. Never share or commit `.env`.
 
 Find your JupyterLab address and token, then open `http://127.0.0.1:PORT/lab?token=TOKEN`:
 
