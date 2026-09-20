@@ -44,9 +44,22 @@ has() {  # has "description" "regex"  -> checks the output of the last run
     printf 'FAIL  %s\n' "$1"; printf '%s\n' "$LAST" | tail -n 6 | sed 's/^/        /'; fail=$((fail + 1))
   fi
 }
+progress_run() {  # progress_run LOGFILE command...   (prints a status line while a long step runs)
+  local log="$1"; shift
+  "$@" > "$log" 2>&1 &
+  local pid=$! t0
+  t0="$(date +%s)"
+  while kill -0 "$pid" 2>/dev/null; do
+    sleep "${HEARTBEAT:-30}"
+    kill -0 "$pid" 2>/dev/null || break
+    printf '        ... %ds elapsed. Latest: %s\n' "$(( $(date +%s) - t0 ))" "$(tail -n 1 "$log" 2>/dev/null | tr -d '\r' | cut -c1-100)"
+  done
+  wait "$pid"
+}
 ok()  { printf 'PASS  %s\n' "$1"; pass=$((pass + 1)); }
 bad() { printf 'FAIL  %s\n' "$1"; fail=$((fail + 1)); }
 
+echo "Working folder and logs: $work"
 echo "== 1. Clone what is committed"
 git clone -q "$src" "$clone" || { echo "git clone failed"; exit 1; }
 cd "$clone" || exit 1
@@ -77,11 +90,11 @@ done
 
 if [ -n "${NO_CACHE:-}" ]; then
   echo "== 3. Build every image from scratch (NO_CACHE): this is slow"
-  docker compose build --no-cache > "$work/build.log" 2>&1 || { echo "FAIL: image build"; tail -n 25 "$work/build.log"; exit 1; }
+  progress_run "$work/build.log" docker compose build --no-cache || { echo "FAIL: image build"; tail -n 25 "$work/build.log"; exit 1; }
 fi
 
 echo "== 4. sh scripts/platform.sh up"
-sh scripts/platform.sh up > "$work/up.log" 2>&1 || {
+progress_run "$work/up.log" sh scripts/platform.sh up || {
   echo "FAIL: platform.sh up did not finish healthy. Last lines:"; tail -n 25 "$work/up.log"
   echo "--- container states:"; docker compose ps -a; echo "(re-run with KEEP=1 to inspect the containers)"; exit 1; }
 ok "platform.sh up: every container healthy"
@@ -121,7 +134,7 @@ has "HiveServer2 answers SQL"                 '20000'
 
 echo "== 7. Stop everything, start it again (a laptop that slept overnight)"
 docker compose stop >/dev/null 2>&1
-sh scripts/platform.sh up > "$work/up2.log" 2>&1 && ok "restart: every container healthy again" || { bad "restart: platform.sh up failed"; tail -n 15 "$work/up2.log"; }
+progress_run "$work/up2.log" sh scripts/platform.sh up && ok "restart: every container healthy again" || { bad "restart: platform.sh up failed"; tail -n 15 "$work/up2.log"; }
 run docker compose exec -T hiveserver2 beeline -u jdbc:hive2://localhost:10000 -n student --silent=true -e "select count(*) from shop.orders"
 has "Hive data survived the restart"          '20000'
 run docker compose exec -T tools sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U student -d shop -Atc "select count(*) from orders"'
