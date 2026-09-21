@@ -121,6 +121,8 @@ run docker compose exec -T tools sh -c 'cd notebooks/scala-hello && sbt -batch p
 has "Scala example compiles with sbt"          '\[success\]'
 run docker compose exec -T tools spark-submit --class HelloScala notebooks/scala-hello/target/scala-2.13/hello-scala_2.13-0.1.0.jar
 has "Scala example runs on Spark and reads Hive"  'SCALA_ROWS .*Books,18'
+run docker compose exec -T tools sh -c 'printf "%s\n" "spark.sql(\"select count(*) as n from shop.orders\").show()" "sys.exit(0)" | spark-shell 2>&1'
+has "Scala shell (spark-shell) reads Hive"     '[|]20000[|]'
 run sh scripts/platform.sh load-sql
 has "PostgreSQL loaded"      'PG_LOADED order_items 59858'
 has "MySQL loaded"           'MY_LOADED order_items 59858'

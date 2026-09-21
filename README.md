@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # Polyglot Big Data Lab
 
 **Nine engines. One dataset. One number: 19,252,162.85.**
@@ -32,15 +37,34 @@ The first start builds the images and downloads a few GB. It took about 40 minut
 
 Open the address it printed, normally <http://127.0.0.1:8888\>. There is no password, because the platform only listens on your own computer. Do not change `BIND_ADDRESS` in `.env` to publish it on a network: without a password, anyone who could reach it could run code on your computer.
 
-### 4. Load the sample data and run the starter notebook
+### 4. Load the sample data
 
 ```
 sh scripts/platform.sh load-sample
 ```
 
-This loads the shop dataset into Hive. In JupyterLab, open `01_hello_spark.ipynb` and press Shift+Enter on its cell. It lists the shop tables and counts the products in each category, using PySpark.
+This loads the shop dataset into Hive. Python and Scala both read it through the same Hive metastore.
 
-### 5. Load and try the other engines
+### 5. Choose Python or Scala
+
+**Python (a notebook).** In JupyterLab, open `01_hello_spark.ipynb` and press Shift+Enter on its cell. It lists the shop tables and counts the products in each category, using PySpark.
+
+**Scala (a shell).** Scala does not run inside a notebook here. It has its own shell. In JupyterLab choose **File, New, Terminal**, then type:
+
+```
+spark-shell
+```
+
+After a short start-up you get a `scala>` prompt. `spark` is already connected to Hive, so you can type:
+
+```
+spark.sql("show tables in shop").show()
+spark.sql("select category, count(*) as products from shop.products group by category order by category").show()
+```
+
+Type `:quit` to leave. To build a Scala project instead of typing in a shell, see step 7.
+
+### 6. Load and try the other engines
 
 The default start runs HDFS, Hive and JupyterLab. To add databases, open `.env`, change the `COMPOSE_PROFILES` line, and run `sh scripts/platform.sh up` again. For example, `COMPOSE_PROFILES=bigdata-lite,sql,mongo` adds PostgreSQL, MySQL and MongoDB. Load the data for each module you switched on:
 
@@ -65,9 +89,9 @@ docker compose exec -T trino trino --output-format ALIGNED --file /scripts/feder
 
 The first joins Hive, PostgreSQL and MySQL in one Spark query (needs `sql`). The second reads MongoDB (needs `mongo`). The third reads Neo4j (needs `neo4j`). The last is one Trino SQL query across the databases, and prints the revenue per city (needs `trino`, and the databases you switched on).
 
-### 6. Run Scala
+### 7. Scala projects with sbt (optional)
 
-Jupyter here runs Python. Scala runs as a compiled Spark job, using sbt, which is already in the notebook container. `notebooks/scala-hello` is a small job that reads the shop data from Hive, so load it first (step 4). The first compile downloads the Scala compiler, so it needs internet and takes a few minutes:
+To build a Scala project, use sbt, which is already in the notebook container. `notebooks/scala-hello` is a small job that reads the shop data from Hive, so load it first (step 4). The first compile downloads the Scala compiler, so it needs internet and takes a few minutes:
 
 ```
 docker compose exec tools sh -c 'cd notebooks/scala-hello && sbt -batch package'
@@ -76,7 +100,7 @@ docker compose exec tools spark-submit --class HelloScala notebooks/scala-hello/
 
 Look for the `SCALA_ROWS` line: one row for each product category. Copy the folder to start a project of your own.
 
-### 7. Stop, restart, erase
+### 8. Stop, restart, erase
 
 ```
 docker compose stop              # stops everything, keeps your data
@@ -183,7 +207,7 @@ Run the clean-clone test after any change you plan to share. It refuses to run w
 
 - **Tested on Apple Silicon (ARM64) with Docker Desktop only.** Intel and AMD machines and Windows with WSL 2 have not been tested yet.
 - **No YARN.** Hadoop here means HDFS; Spark runs in local mode inside the notebook container, and Hive runs its queries on Tez in local mode.
-- **No Scala notebook.** Scala runs as a compiled job (step 6).
+- **No Scala notebook.** Scala runs in a separate shell (step 5) or as a compiled job (step 7).
 - **Spark 4 has no Cassandra connector.** Use `cqlsh`, the Python driver, or Trino to reach Cassandra.
 - **Trino has no Neo4j or Hive catalog.** Neo4j is reachable from Spark and from its own tools.
 - **Teaching-grade security.** JupyterLab has no password, and there is no Kerberos: Hadoop, Hive and Trino trust the user name you give them. Every published port is bound to `127.0.0.1` and every database password is generated per machine, but do not expose this platform to a network.
