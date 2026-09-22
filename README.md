@@ -79,10 +79,11 @@ Then use the engines together. Each command names the modules it needs, and prin
 docker compose exec -T tools spark-submit notebooks/t4_jdbc.py 2>&1 | grep TOTAL_
 docker compose exec -T tools spark-submit notebooks/t5_mongo.py 2>&1 | grep TOTAL_
 docker compose exec -T tools spark-submit notebooks/t6_neo4j.py 2>&1 | grep TOTAL_
+docker compose exec -T tools python3 notebooks/t8_cassandra.py 2>&1 | grep TOTAL_
 docker compose exec -T trino trino --output-format ALIGNED --file /scripts/federated.sql
 ```
 
-The first joins Hive, PostgreSQL and MySQL in one Spark query (needs `sql`). The second reads MongoDB (needs `mongo`). The third reads Neo4j (needs `neo4j`). The last is one Trino SQL query across the databases, and prints the revenue per city (needs `trino`, and the databases you switched on).
+The first joins Hive, PostgreSQL and MySQL in one Spark query (needs `sql`). The second reads MongoDB (needs `mongo`). The third reads Neo4j (needs `neo4j`). The fourth reads Cassandra directly, using `cassandra-driver` since Spark 4 has no Cassandra connector (needs `cassandra`). The last is one Trino SQL query across the databases, and prints the revenue per city (needs `trino`, and the databases you switched on).
 
 ### 7. Scala projects with sbt (optional)
 
