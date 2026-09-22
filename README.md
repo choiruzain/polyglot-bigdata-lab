@@ -30,7 +30,7 @@ The first start builds the images and downloads a few GB. It took about 40 minut
 
 ### 3. Open JupyterLab
 
-Open the address it printed, normally <http://127.0.0.1:8888\>. There is no password, because the platform only listens on your own computer. Do not change `BIND_ADDRESS` in `.env` to publish it on a network: without a password, anyone who could reach it could run code on your computer.
+Open the address it printed, normally <http://127.0.0.1:8888>. There is no password, because the platform only listens on your own computer. Do not change `BIND_ADDRESS` in `.env` to publish it on a network: without a password, anyone who could reach it could run code on your computer.
 
 ### 4. Load the sample data
 
@@ -117,7 +117,7 @@ Then run it. Change **`<YOUR-LOCAL-FOLDER>`** to the folder on your computer tha
 docker run --rm -v <YOUR-LOCAL-FOLDER>:/home/student/notebooks -p 127.0.0.1:8888:8888 -p 127.0.0.1:4040:4040 polyglot-bigdata-lab
 ```
 
-Open <http://127.0.0.1:8888\>. While a Spark session runs, its web page is at <http://127.0.0.1:4040\>. Press `Ctrl+C` to stop. Your notebooks stay in your folder, and anything saved outside it is deleted when the container stops. This container has no databases and no Hive data, so the starter notebook and the Scala example need the full platform. The `127.0.0.1` in the ports keeps it private to your computer, which matters because it has no password.
+Open <http://127.0.0.1:8888>. While a Spark session runs, its web page is at <http://127.0.0.1:4040>. Press `Ctrl+C` to stop. Your notebooks stay in your folder, and anything saved outside it is deleted when the container stops. This container has no databases and no Hive data, so the starter notebook and the Scala example need the full platform. The `127.0.0.1` in the ports keeps it private to your computer, which matters because it has no password.
 
 **Port 8888 already in use?** Another subject's container may be holding it, and `docker run` then stops with "port is already allocated". See what holds it:
 
