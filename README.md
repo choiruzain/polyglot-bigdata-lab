@@ -1,8 +1,3 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
 # Polyglot Big Data Lab
 
 **Nine engines. One dataset. One number: 19,252,162.85.**
