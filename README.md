@@ -161,6 +161,7 @@ A small online shop, generated with a fixed random seed so everyone gets identic
 - **A container disappears, or things become very slow:** you are probably out of memory. Switch off modules you do not need, or give Docker more memory.
 - **Cassandra and Neo4j are slow to start.** Wait for `sh scripts/platform.sh up` to finish before you load data.
 - **You changed a password in `.env` after the first start,** and a database now refuses you: the database kept its original password. Run `sh scripts/platform.sh reset`, then start again.
+- **Testing this on a machine that has run the project before?** Deleting the project folder does not remove Docker's containers, volumes, or images — Docker tracks those separately, keyed to the project name. `sh scripts/platform.sh reset` clears data but keeps built images (fast, seconds). For a true from-scratch rebuild — matching exactly what a brand-new user's first run looks like — use `bash scripts/full-rebuild.sh`, then `sh scripts/platform.sh up` again. This re-downloads and rebuilds everything, so it is slow (20-40+ minutes). Most people never need this; it exists for re-testing the platform itself.
 
 ## Tips
 
