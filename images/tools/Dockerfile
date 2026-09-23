@@ -97,6 +97,7 @@ RUN /tmp/install_neo4j_connector.sh org.neo4j:neo4j-connector-apache-spark_2.13:
 RUN pip install --no-cache-dir neo4j
 
 RUN pip install --no-cache-dir clickhouse-connect "duckdb>=1.5,<2"
+RUN pip install --no-cache-dir trino
 
 # Standalone use ("docker run"): start JupyterLab in the mounted notebooks folder.
 # JupyterLab runs without a password, so the platform only ever publishes its port on localhost.

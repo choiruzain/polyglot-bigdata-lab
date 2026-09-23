@@ -15,3 +15,5 @@ project/project/
 data/shop/
 config/trino/catalog/
 .Rhistory
+notebooks/playground/*
+!notebooks/playground/README.md
