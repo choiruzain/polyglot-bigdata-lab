@@ -1,0 +1,35 @@
+# Optional standalone add-on; the main platform must already be running.
+name: polyglot-zeppelin
+services:
+  zeppelin:
+    build: ./images/zeppelin
+    image: dataplatform/zeppelin:spark4.1.3-experimental
+    init: true
+    environment:
+      SPARK_HOME: /opt/spark
+      SPARK_MASTER: local[2]
+      # Spark 4's JDK logging bridge requires SLF4J 2; Zeppelin bundles 1.7.
+      ZEPPELIN_INTP_CLASSPATH_OVERRIDES: /opt/spark/jars/slf4j-api-2.0.17.jar
+      ZEPPELIN_INTERPRETER_GROUP_DEFAULT: spark
+      ZEPPELIN_ALLOWED_ORIGINS: http://127.0.0.1:${ZEPPELIN_PORT:-8090},http://localhost:${ZEPPELIN_PORT:-8090}
+    ports:
+      - "127.0.0.1:${ZEPPELIN_PORT:-8090}:8080"
+    volumes:
+      - ./config/hadoop:/opt/hadoop-conf:ro
+      - ./config/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - zeppelin-notebooks:/opt/zeppelin/notebook
+    networks:
+      - platform
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    restart: "no"
+networks:
+  platform:
+    external: true
+    name: ${PLATFORM_NETWORK:-dataplatform_default}
+volumes:
+  zeppelin-notebooks:

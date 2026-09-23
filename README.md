@@ -59,6 +59,11 @@ spark.sql("select category, count(*) as products from shop.products group by cat
 
 Type `:quit` to leave. To build a Scala project instead of typing in a shell, see step 7.
 
+**Experimental Scala notebooks:** an optional Apache Zeppelin add-on has been
+verified locally with Spark 4.1.3 and Scala 2.13.17. See
+[the build and usage guide](images/zeppelin/README.md). It runs as a separate
+local notebook service and reads the same Hive tables.
+
 ### 6. Load and try the other engines
 
 The default start runs HDFS, Hive and JupyterLab. To add databases, open `.env`, change the `COMPOSE_PROFILES` line, and run `sh scripts/platform.sh up` again. For example, `COMPOSE_PROFILES=bigdata-lite,sql,mongo` adds PostgreSQL, MySQL and MongoDB. Load the data for each module you switched on:
@@ -204,7 +209,7 @@ Run the clean-clone test after any change you plan to share. It refuses to run w
 
 - **Tested on Apple Silicon (ARM64) with Docker Desktop only.** Intel and AMD machines and Windows with WSL 2 have not been tested yet.
 - **No YARN.** Hadoop here means HDFS; Spark runs in local mode inside the notebook container, and Hive runs its queries on Tez in local mode.
-- **No Scala notebook.** Scala runs in a separate shell (step 5) or as a compiled job (step 7).
+- **No Scala Jupyter kernel.** Scala runs in a separate shell (step 5), as a compiled job (step 7), or in the [experimental Zeppelin add-on](images/zeppelin/README.md).
 - **Spark 4 has no Cassandra connector.** Use `cqlsh`, the Python driver, or Trino to reach Cassandra.
 - **Trino has no Neo4j or Hive catalog.** Neo4j is reachable from Spark and from its own tools.
 - **Teaching-grade security.** JupyterLab has no password, and there is no Kerberos: Hadoop, Hive and Trino trust the user name you give them. Every published port is bound to `127.0.0.1` and every database password is generated per machine, but do not expose this platform to a network.
