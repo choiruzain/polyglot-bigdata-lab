@@ -29,6 +29,8 @@ The first `up` builds every image and downloads every database on first run -- a
 
 Open **http://127.0.0.1:8888** for JupyterLab (no password -- see [Known limitations](#known-limitations)). Run `01_hello_spark.ipynb` for a first PySpark example against Hive.
 
+**Try each database from a notebook:** `notebooks/jdbc.ipynb` (PostgreSQL + MySQL), `notebooks/mongo.ipynb`, `notebooks/neo4j.ipynb` and `notebooks/cassandra.ipynb` each connect to one engine and print the same revenue total, so you can open, read and re-run them one at a time instead of reading the `.py` scripts in [Checks you can run](#checks-you-can-run). Want to keep your own edits out of Git? Copy any of them into `notebooks/playground/` first -- everything in that folder is ignored by Git, so you can experiment freely.
+
 **Check every engine at once**, and see the same total (`19252162.85`) from each:
 
 ```
@@ -69,7 +71,9 @@ spark.sql("select category, count(*) as products from shop.products group by cat
 ```
 Type `:quit` to leave.
 
-**A real notebook**, for anything more involved -- an experimental Apache Zeppelin add-on runs Scala against Spark 4.1.3, with Hive, PostgreSQL, MySQL and MongoDB all confirmed working. This lives on the `experiment-zeppelin` branch, not `main` yet:
+**From inside JupyterLab**, without opening a terminal -- `notebooks/scala.ipynb` runs on the Python kernel but its one cell drives `spark-shell` for you and prints the result back into the notebook. It's the same shell as above, just launched from a notebook cell instead of a terminal.
+
+**A real notebook with an actual Scala kernel**, for anything more involved -- an experimental Apache Zeppelin add-on runs Scala against Spark 4.1.3, with Hive, PostgreSQL, MySQL and MongoDB all confirmed working. This lives on the `experiment-zeppelin` branch, not `main` yet:
 
 ```
 git checkout experiment-zeppelin
@@ -164,7 +168,8 @@ docker-compose.yml   the whole platform
 images/              Dockerfiles: hadoop, hive, tools (with pinned Python packages)
 config/              Hadoop, Hive, Tez, Spark, ClickHouse and Trino settings
 scripts/             platform.sh (start, stop, load, reset), the data loaders and the checks
-notebooks/           the starter notebook, the Scala example and test scripts
+notebooks/           the starter notebook, per-database example notebooks, the Scala example,
+                     test scripts, and playground/ (a gitignored scratch folder)
 data/                sample data is generated here (not committed)
 LICENSE, CITATION.cff
 ```
@@ -186,7 +191,7 @@ Run the clean-clone test after any change you plan to share. It refuses to run w
 
 - **Tested on Apple Silicon (ARM64) with Docker Desktop only.** Intel and AMD machines and Windows with WSL 2 have not been tested yet.
 - **No YARN.** Hadoop here means HDFS; Spark runs in local mode inside the notebook container, and Hive runs its queries on Tez in local mode.
-- **No Scala notebook.** Scala runs in a separate shell (step 5) or as a compiled job (step 7).
+- **No native Scala kernel in JupyterLab.** `notebooks/scala.ipynb` drives the `spark-shell` command from a notebook cell (see [Scala](#scala)), which covers quick one-off code; for an actual Scala kernel, use the Zeppelin add-on described in the same section.
 - **Spark 4 has no Cassandra connector.** Use `cqlsh`, the Python driver, or Trino to reach Cassandra.
 - **Trino has no Neo4j or Hive catalog.** Neo4j is reachable from Spark and from its own tools.
 - **Teaching-grade security.** JupyterLab has no password, and there is no Kerberos: Hadoop, Hive and Trino trust the user name you give them. Every published port is bound to `127.0.0.1` and every database password is generated per machine, but do not expose this platform to a network.
