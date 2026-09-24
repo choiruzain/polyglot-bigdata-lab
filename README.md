@@ -221,3 +221,32 @@ The scripts, configuration and documentation in this repository are released und
 ## Third-party software
 
 This repository contains scripts and configuration only. Hadoop, Hive, Spark, Trino, PostgreSQL, MySQL, MongoDB, Cassandra, Neo4j, ClickHouse and DuckDB are downloaded at build time and keep their own licenses.
+
+## Rebuilding all data from scratch
+
+If `sh scripts/platform.sh up` reports `sync-passwords: ... could not sync`, or
+loaders fail with `Access denied` / `Authentication failed`, the database
+volumes were probably created with different passwords than the current
+`.env` (for example, by another checkout using the same project name).
+Changing `.env` does not update passwords already stored in a volume.
+
+To wipe and rebuild every database and reload all sample data:
+
+```bash
+sh scripts/rebuild-all.sh --dry-run   # show what would be deleted and loaded
+sh scripts/rebuild-all.sh             # type "rebuild" to confirm
+```
+
+What it does:
+
+- Removes all containers and data volumes of this Compose project (Hive/HDFS,
+  metastore, PostgreSQL, MySQL, MongoDB, and any other enabled profiles).
+- Keeps Docker images and Zeppelin notebooks (`--include-notebooks` wipes those too).
+- Runs `platform.sh up`, stops if password sync fails, then runs `load-sample`
+  followed by every other `load-*` command.
+
+Options: `--yes` skips the prompt, and `--help` shows usage.
+
+> **Warning:** this permanently deletes any tables or collections you created.
+> Use only one checkout of the lab per machine; the script warns if containers
+> were started from another folder.
