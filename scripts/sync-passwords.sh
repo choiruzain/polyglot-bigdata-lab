@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Keeps each database's student-user password in sync with .env. Run automatically after every
-# `platform.sh up`. Safe to run repeatedly — each ALTER just re-sets the password to its current
-# value, whether or not it had actually drifted.
+# `platform.sh up`. Safe to run repeatedly -- each ALTER/change just re-sets the password to its
+# current value, whether or not it had actually drifted.
 #
 # Limitation: this can only fix the STUDENT password, and only while the ROOT/superuser credential
-# is still valid. If root itself has gone stale (rare — usually caused by manual .env editing while
-# containers are running), the only fix is wiping that service's volume and re-initializing it.
+# is still valid. If root itself has gone stale, the only fix is wiping that service's volume.
 set -u
 cd "$(dirname "$0")/.."
 [ -f .env ] && { set -a; . ./.env; set +a; }
@@ -18,7 +17,7 @@ if running postgres; then
       "ALTER USER student WITH PASSWORD '${POSTGRES_PASSWORD:-}';" >/dev/null 2>&1; then
     echo "  ok"
   else
-    echo "  FAILED (local trust auth should always work here — check the postgres container's logs)"
+    echo "  FAILED (local trust auth should always work here -- check the postgres container's logs)"
   fi
 fi
 
@@ -28,7 +27,7 @@ if running mysql; then
       "ALTER USER 'student'@'%' IDENTIFIED BY '${MYSQL_PASSWORD:-}'; FLUSH PRIVILEGES;" >/dev/null 2>&1; then
     echo "  ok"
   else
-    echo "  could not sync (the root password may itself be stale — if load-sql then fails, reset this volume)"
+    echo "  could not sync (the root password may itself be stale -- if load-sql then fails, reset this volume)"
   fi
 fi
 
@@ -38,6 +37,17 @@ if running cassandra; then
       "ALTER ROLE student WITH PASSWORD = '${CASSANDRA_STUDENT_PASSWORD:-}';" >/dev/null 2>&1; then
     echo "  ok"
   else
-    echo "  could not sync (the root password may itself be stale — if load-cassandra then fails, reset this volume)"
+    echo "  could not sync (the root password may itself be stale -- if load-cassandra then fails, reset this volume)"
+  fi
+fi
+
+if running mongo; then
+  echo "sync-passwords: mongo"
+  if docker compose exec -T mongo mongosh admin \
+      -u root -p "${MONGO_INITDB_ROOT_PASSWORD:-}" --quiet --eval \
+      "db.getSiblingDB('shop').changeUserPassword('student', '${MONGO_STUDENT_PASSWORD:-}')" >/dev/null 2>&1; then
+    echo "  ok"
+  else
+    echo "  could not sync (the root password may itself be stale -- if load-mongo then fails, reset this volume)"
   fi
 fi

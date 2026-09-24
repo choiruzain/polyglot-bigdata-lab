@@ -12,6 +12,10 @@ services:
       ZEPPELIN_INTP_CLASSPATH_OVERRIDES: /opt/spark/jars/slf4j-api-2.0.17.jar
       ZEPPELIN_INTERPRETER_GROUP_DEFAULT: spark
       ZEPPELIN_ALLOWED_ORIGINS: http://127.0.0.1:${ZEPPELIN_PORT:-8090},http://localhost:${ZEPPELIN_PORT:-8090}
+      # Same names the main "tools" service uses, so the Scala engine-connectivity cells work.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
+      MONGO_PASSWORD: ${MONGO_STUDENT_PASSWORD:-}
     ports:
       - "127.0.0.1:${ZEPPELIN_PORT:-8090}:8080"
     volumes:
