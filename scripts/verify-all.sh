@@ -21,5 +21,13 @@ check "Hive + PostgreSQL + MySQL" postgres   sh -c "docker compose exec -T tools
 check "MongoDB + Hive"            mongo      sh -c "docker compose exec -T tools spark-submit notebooks/t5_mongo.py 2>&1 | grep TOTAL_"
 check "Neo4j"                     neo4j      sh -c "docker compose exec -T tools spark-submit notebooks/t6_neo4j.py 2>&1 | grep TOTAL_"
 check "Cassandra"                 cassandra  sh -c "docker compose exec -T tools python3 notebooks/t8_cassandra.py 2>&1 | grep TOTAL_"
-check "Trino (federated)"         trino      docker compose exec -T trino trino --output-format ALIGNED --file /scripts/federated.sql
+
+# federated.sql joins Postgres + ClickHouse + MySQL + Cassandra, so it genuinely needs all four,
+# not just Trino itself -- checking only "trino" would fail by default now that Cassandra is off.
+if running trino && running cassandra; then
+  echo "== Trino (federated, needs Cassandra too) =="
+  docker compose exec -T trino trino --output-format ALIGNED --file /scripts/federated.sql
+else
+  echo "== Trino (federated, needs Cassandra too): skipped (needs both trino and cassandra running) =="
+fi
 echo "== verify-all: done =="

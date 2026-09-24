@@ -35,18 +35,18 @@ Open **http://127.0.0.1:8888** for JupyterLab (no password -- see [Known limitat
 sh scripts/verify-all.sh
 ```
 
-That runs the Hive+PostgreSQL+MySQL join, the MongoDB example, Neo4j, Cassandra, and the Trino federated query in sequence, skipping any engine that isn't currently running.
+That runs the Hive+PostgreSQL+MySQL join, the MongoDB example, and Neo4j, skipping any engine that isn't currently running. Cassandra and the Trino federated query (which needs Cassandra too) only run if you've added the `cassandra` module.
 
 ## Choose your modules (optional)
 
-By default every module is on, so the commands above show the whole platform. To run a lighter subset instead, edit `COMPOSE_PROFILES` in `.env`, then run `sh scripts/platform.sh up` again:
+By default every module is on except Cassandra, so the commands above show most of the platform without it. Cassandra's automatic password sync isn't as reliable yet as the other engines' (see [If something goes wrong](#if-something-goes-wrong)), so it's left out of the default until that's fixed -- add it back with `COMPOSE_PROFILES=bigdata-lite,sql,mongo,cassandra,neo4j,clickhouse,trino` in `.env`, then run `sh scripts/platform.sh up` again. To run an even lighter subset, edit `COMPOSE_PROFILES` the same way:
 
 | Module | Adds |
 |---|---|
 | `bigdata-lite` (always on) | HDFS, Hive, JupyterLab |
 | `sql` | PostgreSQL, MySQL |
 | `mongo` | MongoDB |
-| `cassandra` | Cassandra |
+| `cassandra` | Cassandra (off by default -- see above) |
 | `neo4j` | Neo4j |
 | `clickhouse` | ClickHouse |
 | `trino` | SQL across every database above |
