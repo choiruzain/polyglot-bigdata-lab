@@ -22,10 +22,16 @@ cd polyglot-bigdata-lab
 
 ```
 sh scripts/platform.sh up
-sh scripts/platform.sh load-all
+sh scripts/load-all.sh
 ```
 
-The first `up` builds every image and downloads every database on first run -- allow 30-60 minutes and a few GB, depending on your connection. `.env` is created automatically with random passwords; never share or commit it. `load-all` loads the shared shop dataset into whichever engines are actually running, skipping the rest -- no need to run each loader by hand.
+The first `up` builds every image and downloads every database on first run -- allow 30-60 minutes and a few GB, depending on your connection. `.env` is created automatically with random passwords; never share or commit it. `load-all.sh` loads the shared shop dataset into whichever engines are actually running, skipping the rest -- no need to run each loader by hand.
+
+**If you see something like this, ignore it -- it's expected, not a failure:**
+```
+Error response from daemon: ports are not available: exposing port TCP 127.0.0.1:5432 -> 127.0.0.1:0: listen tcp4 127.0.0.1:5432: bind: address already in use
+```
+That port (5432 is Postgres' default) was already taken by something else on your machine. `up` detects this automatically, moves that service to the next free port (e.g. `POSTGRES_PORT=5433`) in your `.env`, and retries -- no action needed. The same self-healing applies to any other port collision it reports.
 
 Open **http://127.0.0.1:8888** for JupyterLab (no password -- see [Known limitations](#known-limitations)). Run `01_hello_spark.ipynb` for a first PySpark example against Hive.
 
@@ -41,7 +47,7 @@ That runs the Hive+PostgreSQL+MySQL join, the MongoDB example, and Neo4j, skippi
 
 ## Choose your modules (optional)
 
-By default every module is on except Cassandra, so the commands above show most of the platform without it. Cassandra's automatic password sync isn't as reliable yet as the other engines' (see [If something goes wrong](#if-something-goes-wrong)), so it's left out of the default until that's fixed -- add it back with `COMPOSE_PROFILES=bigdata-lite,sql,mongo,cassandra,neo4j,clickhouse,trino` in `.env`, then run `sh scripts/platform.sh up` again. To run an even lighter subset, edit `COMPOSE_PROFILES` the same way:
+By default every module is on except Cassandra, so the commands above show most of the platform without it. Cassandra's automatic password sync isn't as reliable yet as the other engines' (see [If something goes wrong](#if-something-goes-wrong)), so it's left out of the default until that's fixed.
 
 | Module | Adds |
 |---|---|
@@ -53,7 +59,28 @@ By default every module is on except Cassandra, so the commands above show most 
 | `clickhouse` | ClickHouse |
 | `trino` | SQL across every database above |
 
-Example: `COMPOSE_PROFILES=bigdata-lite,mongo` runs just Hive and MongoDB.
+To turn a module on or off -- including adding Cassandra back -- edit `COMPOSE_PROFILES` in `.env`. Two ways to do that:
+
+**Nano**, if you're not comfortable editing files on the command line:
+```
+nano .env
+```
+Find the `COMPOSE_PROFILES=` line, edit the list of modules, then save and exit: `Ctrl+O`, `Enter`, `Ctrl+X`.
+
+**One command**, to add Cassandra back specifically:
+```
+grep COMPOSE_PROFILES .env
+sed -i.bak 's/^COMPOSE_PROFILES=.*/COMPOSE_PROFILES=bigdata-lite,sql,mongo,cassandra,neo4j,clickhouse,trino/' .env
+rm .env.bak
+```
+`grep` shows you the current line before you change it; `sed -i.bak '...' .env` replaces it with the new list, keeping a backup (`.env.bak`) first in case something goes wrong; `rm .env.bak` removes that backup once you've confirmed it worked. For a lighter subset instead of adding a module, edit the same line by hand, e.g. `COMPOSE_PROFILES=bigdata-lite,mongo` runs just Hive and MongoDB.
+
+Then run `sh scripts/platform.sh up` again. If you just added Cassandra, you may see:
+```
+sync-passwords: cassandra
+  could not sync
+```
+**Ignore this.** It's a known, harmless race: `sync-passwords.sh` only checks that the Cassandra container is running, not that Cassandra's own `init.sh` (which creates the student login) has finished -- Cassandra self-heals a moment later once `init.sh` completes. Confirm it worked with `sh scripts/platform.sh load-cassandra` followed by `sh scripts/verify-all.sh` again -- Cassandra and the Trino federated check should now run for real instead of printing `skipped`.
 
 ## Scala
 
