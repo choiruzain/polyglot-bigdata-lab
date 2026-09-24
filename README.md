@@ -4,99 +4,81 @@
 
 A Docker lab for teaching big data. It runs Hadoop (HDFS), Hive, Spark and Trino, plus PostgreSQL, MySQL, MongoDB, Cassandra, Neo4j, ClickHouse and DuckDB. Every engine is loaded with the same small online-shop dataset, and every engine answers the same revenue question with the same total, so you can compare how each one works.
 
-## Quick start
+## Quick start (from scratch)
 
-You need **Docker Desktop** (Mac, Windows or Linux). On Windows, turn on WSL 2, run every command in the **Ubuntu (WSL)** terminal, and keep the project inside the WSL file system. Give Docker enough memory (Docker Desktop, Settings, Resources): the default start needs about 3 GB while Spark runs, and every module together needs about 8 GB, so 12 GB is comfortable. Check that Docker works:
+Everything below is meant to be copy-pasted as-is. No manual steps in between.
 
 ```
 docker --version
 docker compose version
 ```
 
-### 1. Get the project
-
 ```
 git clone https://github.com/choiruzain/polyglot-bigdata-lab.git
 cd polyglot-bigdata-lab
 ```
 
-### 2. Start the platform
+**Start everything, then load every engine's data, in two commands:**
 
 ```
 sh scripts/platform.sh up
+sh scripts/platform.sh load-all
 ```
 
-The first start builds the images and downloads a few GB. It took about 40 minutes with every module on a fast connection, and later starts take a minute or two. It creates a `.env` file with random passwords for the databases. Never share or commit `.env`. When it finishes, it prints the address of JupyterLab.
+The first `up` builds every image and downloads every database on first run -- allow 30-60 minutes and a few GB, depending on your connection. `.env` is created automatically with random passwords; never share or commit it. `load-all` loads the shared shop dataset into whichever engines are actually running, skipping the rest -- no need to run each loader by hand.
 
-### 3. Open JupyterLab
+Open **http://127.0.0.1:8888** for JupyterLab (no password -- see [Known limitations](#known-limitations)). Run `01_hello_spark.ipynb` for a first PySpark example against Hive.
 
-Open the address it printed, normally <http://127.0.0.1:8888>. There is no password, because the platform only listens on your own computer. Do not change `BIND_ADDRESS` in `.env` to publish it on a network: without a password, anyone who could reach it could run code on your computer.
-
-### 4. Load the sample data
+**Check every engine at once**, and see the same total (`19252162.85`) from each:
 
 ```
-sh scripts/platform.sh load-sample
+sh scripts/verify-all.sh
 ```
 
-This loads the shop dataset into Hive. Python and Scala both read it through the same Hive metastore.
+That runs the Hive+PostgreSQL+MySQL join, the MongoDB example, Neo4j, Cassandra, and the Trino federated query in sequence, skipping any engine that isn't currently running.
 
-### 5. Choose Python or Scala
+## Choose your modules (optional)
 
-**Python (a notebook).** In JupyterLab, open `01_hello_spark.ipynb` and press Shift+Enter on its cell. It lists the shop tables and counts the products in each category, using PySpark.
+By default every module is on, so the commands above show the whole platform. To run a lighter subset instead, edit `COMPOSE_PROFILES` in `.env`, then run `sh scripts/platform.sh up` again:
 
-**Scala (a shell).** Scala does not run inside a notebook here. It has its own shell. In JupyterLab choose **File, New, Terminal**, then type:
+| Module | Adds |
+|---|---|
+| `bigdata-lite` (always on) | HDFS, Hive, JupyterLab |
+| `sql` | PostgreSQL, MySQL |
+| `mongo` | MongoDB |
+| `cassandra` | Cassandra |
+| `neo4j` | Neo4j |
+| `clickhouse` | ClickHouse |
+| `trino` | SQL across every database above |
+
+Example: `COMPOSE_PROFILES=bigdata-lite,mongo` runs just Hive and MongoDB.
+
+## Scala
+
+Jupyter here runs Python. For Scala, there are two ways to run it, depending on how interactive you want to be:
+
+**A shell**, for quick, one-off code -- works today on `main`:
 
 ```
-spark-shell
+docker compose exec tools spark-shell
 ```
 
-After a short start-up you get a `scala>` prompt. `spark` is already connected to Hive, so you can type:
-
-```
-spark.sql("show tables in shop").show()
+You get a `scala>` prompt already connected to Hive:
+```scala
 spark.sql("select category, count(*) as products from shop.products group by category order by category").show()
 ```
+Type `:quit` to leave.
 
-Type `:quit` to leave. To build a Scala project instead of typing in a shell, see step 7.
-
-### 6. Load and try the other engines
-
-The default start runs HDFS, Hive and JupyterLab. To add databases, open `.env`, change the `COMPOSE_PROFILES` line, and run `sh scripts/platform.sh up` again. For example, `COMPOSE_PROFILES=bigdata-lite,sql,mongo` adds PostgreSQL, MySQL and MongoDB. Load the data for each module you switched on:
-
-| Module | Load the shop data | You should see |
-|---|---|---|
-| Hive (default) | `sh scripts/platform.sh load-sample` | `LOADED order_items 59858` |
-| `sql` | `sh scripts/platform.sh load-sql` | `PG_LOADED order_items 59858` and `MY_LOADED order_items 59858` |
-| `mongo` | `sh scripts/platform.sh load-mongo` | `MONGO_LOADED items 59858` |
-| `cassandra` | `sh scripts/platform.sh load-cassandra` | `CASSANDRA_TOTAL 19252162.85` |
-| `neo4j` | `sh scripts/platform.sh load-neo4j` | `NEO4J_TOTAL 19252162.85` |
-| `clickhouse` | `sh scripts/platform.sh load-clickhouse` | `CLICKHOUSE_TOTAL 19252162.85` |
-| DuckDB (no server) | `sh scripts/platform.sh demo-duckdb` | `DUCKDB_TOTAL 19252162.85` |
-
-Then use the engines together. Each command names the modules it needs, and prints a line ending in the same total, `19252162.85`:
+**A real notebook**, for anything more involved -- an experimental Apache Zeppelin add-on runs Scala against Spark 4.1.3, with Hive, PostgreSQL, MySQL and MongoDB all confirmed working. This lives on the `experiment-zeppelin` branch, not `main` yet:
 
 ```
-docker compose exec -T tools spark-submit notebooks/t4_jdbc.py 2>&1 | grep TOTAL_
-docker compose exec -T tools spark-submit notebooks/t5_mongo.py 2>&1 | grep TOTAL_
-docker compose exec -T tools spark-submit notebooks/t6_neo4j.py 2>&1 | grep TOTAL_
-docker compose exec -T tools python3 notebooks/t8_cassandra.py 2>&1 | grep TOTAL_
-docker compose exec -T trino trino --output-format ALIGNED --file /scripts/federated.sql
+git checkout experiment-zeppelin
+docker compose -f compose.zeppelin.yml up -d --wait
 ```
 
-The first joins Hive, PostgreSQL and MySQL in one Spark query (needs `sql`). The second reads MongoDB (needs `mongo`). The third reads Neo4j (needs `neo4j`). The fourth reads Cassandra directly, using `cassandra-driver` since Spark 4 has no Cassandra connector (needs `cassandra`). The last is one Trino SQL query across the databases, and prints the revenue per city (needs `trino`, and the databases you switched on).
+Then open **http://127.0.0.1:8090**. See [`images/zeppelin/README.md`](images/zeppelin/README.md) for the full setup and verification steps.
 
-### 7. Scala projects with sbt (optional)
-
-To build a Scala project, use sbt, which is already in the notebook container. `notebooks/scala-hello` is a small job that reads the shop data from Hive, so load it first (step 4). The first compile downloads the Scala compiler, so it needs internet and takes a few minutes:
-
-```
-docker compose exec tools sh -c 'cd notebooks/scala-hello && sbt -batch package'
-docker compose exec tools spark-submit --class HelloScala notebooks/scala-hello/target/scala-2.13/hello-scala_2.13-0.1.0.jar
-```
-
-Look for the `SCALA_ROWS` line: one row for each product category. Copy the folder to start a project of your own.
-
-### 8. Stop, restart, erase
+## Stop, restart, erase
 
 ```
 docker compose stop              # stops everything, keeps your data
