@@ -34,6 +34,12 @@ fi
 
 if running cassandra; then
   echo "sync-passwords: cassandra"
+  # Known quirk (harmless, documented 2026-09-24): this can fail on a genuinely fresh clone,
+  # not just after a password rotation. It only checks that the CONTAINER is running, not that
+  # Cassandra's own init.sh (which changes root's password and creates the student role in
+  # several steps) has actually FINISHED -- so the student role may not exist yet when this
+  # fires. Cassandra self-heals a moment later via its own init.sh regardless. A real fix would
+  # give this the same retry-until-ready loop init.sh already uses for itself.
   if docker compose exec -T cassandra cqlsh -u cassandra -p "${CASSANDRA_ROOT_PASSWORD:-}" -e \
       "ALTER ROLE student WITH PASSWORD = '${CASSANDRA_STUDENT_PASSWORD:-}';" >/dev/null 2>&1; then
     echo "  ok"
