@@ -6,85 +6,147 @@ A Docker lab for teaching big data. It runs Hadoop (HDFS), Hive, Spark and Trino
 
 ## Quick start (from scratch)
 
-Everything below is meant to be copy-pasted as-is. No manual steps in between.
+Everything below is meant to be copy-pasted as-is, in order.
+
+### 1. Check prerequisites
 
 ```
 docker --version
 docker compose version
 ```
 
+### 2. Reset to a clean baseline *(skip if you're brand new)*
+
+Only for re-running a fresh-clone test on a machine that's had the platform before -- a first-time user has nothing to reset and should go straight to step 3.
+
+```
+cd <your-path-folder>/polyglot-bigdata-lab && docker compose down -v
+cd <your-path-folder> && rm -rf polyglot-bigdata-lab
+```
+
+### 3. Fresh clone
+
 ```
 git clone https://github.com/choiruzain/polyglot-bigdata-lab.git
 cd polyglot-bigdata-lab
 ```
 
-**Start everything, then load every engine's data, in two commands:**
+### 4. Start without Cassandra (the default)
 
 ```
 sh scripts/platform.sh up
+```
+
+This builds the images, writes a `.env` with generated passwords (never share or commit it), and starts every module **except Cassandra** -- left out of the default profile because its password sync isn't reliable yet (harmless, self-heals -- see step 8). First run downloads every database, so allow 30-60 minutes and a few GB depending on your connection. No manual steps needed here.
+
+### 5. Load every engine's data
+
+```
 sh scripts/load-all.sh
 ```
 
-The first `up` builds every image and downloads every database on first run -- allow 30-60 minutes and a few GB, depending on your connection. `.env` is created automatically with random passwords; never share or commit it. `load-all.sh` loads the shared shop dataset into whichever engines are actually running, skipping the rest -- no need to run each loader by hand.
+(Not `sh scripts/platform.sh load-all` -- that just prints usage text, since `load-all` isn't one of `platform.sh`'s subcommands.) You should see each engine load in turn, and a line like:
 
-**If you see something like this, ignore it -- it's expected, not a failure:**
+```
+== Cassandra: skipped (cassandra is not running) ==
+```
+
+That's expected -- Cassandra isn't running yet.
+
+**If you also see a port error like this, ignore it too -- it's expected:**
+
 ```
 Error response from daemon: ports are not available: exposing port TCP 127.0.0.1:5432 -> 127.0.0.1:0: listen tcp4 127.0.0.1:5432: bind: address already in use
 ```
-That port (5432 is Postgres' default) was already taken by something else on your machine. `up` detects this automatically, moves that service to the next free port (e.g. `POSTGRES_PORT=5433`) in your `.env`, and retries -- no action needed. The same self-healing applies to any other port collision it reports.
 
-Open **http://127.0.0.1:8888** for JupyterLab (no password -- see [Known limitations](#known-limitations)). Run `01_hello_spark.ipynb` for a first PySpark example against Hive.
+Port 5432 (Postgres' default) was already taken by something else on your machine -- probably another Postgres, or a leftover container from an earlier test. `platform.sh up` detects that automatically, moves the affected service to the next free port (e.g. `POSTGRES_PORT=5433`) in your `.env`, and retries. The same self-healing applies to any other port collision it reports.
 
-**Try each database from a notebook:** `notebooks/jdbc.ipynb` (PostgreSQL + MySQL), `notebooks/mongo.ipynb`, `notebooks/neo4j.ipynb` and `notebooks/cassandra.ipynb` each connect to one engine and print the same revenue total, so you can open, read and re-run them one at a time instead of reading the `.py` scripts in [Checks you can run](#checks-you-can-run). Want to keep your own edits out of Git? Copy any of them into `notebooks/playground/` first -- everything in that folder is ignored by Git, so you can experiment freely.
-
-**Check every engine at once**, and see the same total (`19252162.85`) from each:
+### 6. Verify everything
 
 ```
 sh scripts/verify-all.sh
 ```
 
-That runs the Hive+PostgreSQL+MySQL join, the MongoDB example, and Neo4j, skipping any engine that isn't currently running. Cassandra and the Trino federated query (which needs Cassandra too) only run if you've added the `cassandra` module.
+Every check for a running engine passes; the Cassandra check and the Trino federated check (which needs Cassandra too) print `skipped` instead of failing, since neither can run without Cassandra.
 
-## Choose your modules (optional)
+### 7. Open JupyterLab
 
-By default every module is on except Cassandra, so the commands above show most of the platform without it. Cassandra's automatic password sync isn't as reliable yet as the other engines' (see [If something goes wrong](#if-something-goes-wrong)), so it's left out of the default until that's fixed.
+Open the address `platform.sh up` printed, normally <http://127.0.0.1:8888>. Run `01_hello_spark.ipynb` to confirm PySpark reads Hive. At this point you have a fully working platform with everything except Cassandra -- no manual per-engine steps were needed. (Step 11 below has the full set of example notebooks once you're here.)
+
+### 8. Choose your modules / add Cassandra back
 
 | Module | Adds |
 |---|---|
 | `bigdata-lite` (always on) | HDFS, Hive, JupyterLab |
 | `sql` | PostgreSQL, MySQL |
 | `mongo` | MongoDB |
-| `cassandra` | Cassandra (off by default -- see above) |
+| `cassandra` | Cassandra (off by default -- see step 4) |
 | `neo4j` | Neo4j |
 | `clickhouse` | ClickHouse |
 | `trino` | SQL across every database above |
 
-To turn a module on or off -- including adding Cassandra back -- edit `COMPOSE_PROFILES` in `.env`. Two ways to do that:
+To turn a module on or off -- including adding Cassandra -- edit `COMPOSE_PROFILES` in `.env`. Two ways to do that:
 
 **Nano**, if you're not comfortable editing files on the command line:
+
 ```
 nano .env
 ```
+
 Find the `COMPOSE_PROFILES=` line, edit the list of modules, then save and exit: `Ctrl+O`, `Enter`, `Ctrl+X`.
 
 **One command**, to add Cassandra back specifically:
+
 ```
 grep COMPOSE_PROFILES .env
 sed -i.bak 's/^COMPOSE_PROFILES=.*/COMPOSE_PROFILES=bigdata-lite,sql,mongo,cassandra,neo4j,clickhouse,trino/' .env
 rm .env.bak
 ```
-`grep` shows you the current line before you change it; `sed -i.bak '...' .env` replaces it with the new list, keeping a backup (`.env.bak`) first in case something goes wrong; `rm .env.bak` removes that backup once you've confirmed it worked. For a lighter subset instead of adding a module, edit the same line by hand, e.g. `COMPOSE_PROFILES=bigdata-lite,mongo` runs just Hive and MongoDB.
+
+`grep` shows you the current line before you change it; `sed -i.bak '...' .env` replaces it with the new list, keeping a backup (`.env.bak`) first in case something goes wrong; `rm .env.bak` removes that backup once you've confirmed it worked. For a lighter subset instead, edit the same line by hand, e.g. `COMPOSE_PROFILES=bigdata-lite,mongo` runs just Hive and MongoDB.
+
+Either way you end up with a line like:
+
+```
+COMPOSE_PROFILES=bigdata-lite,sql,mongo,cassandra,neo4j,clickhouse,trino
+```
 
 Then run `sh scripts/platform.sh up` again. If you just added Cassandra, you may see:
+
 ```
 sync-passwords: cassandra
   could not sync
 ```
-**Ignore this.** It's a known, harmless race: `sync-passwords.sh` only checks that the Cassandra container is running, not that Cassandra's own `init.sh` (which creates the student login) has finished -- Cassandra self-heals a moment later once `init.sh` completes. Confirm it worked with `sh scripts/platform.sh load-cassandra` followed by `sh scripts/verify-all.sh` again -- Cassandra and the Trino federated check should now run for real instead of printing `skipped`.
+
+**Ignore this.** It's a known, harmless race: `sync-passwords.sh` only checks that the Cassandra container is running, not that Cassandra's own `init.sh` (which creates the student login) has finished -- Cassandra self-heals a moment later once `init.sh` completes.
+
+### 9. Confirm Cassandra actually works
+
+```
+sh scripts/platform.sh load-cassandra
+docker compose exec -T tools python3 notebooks/t8_cassandra.py
+```
+
+You should see `CASSANDRA_TOTAL 19252162.85`.
+
+### 10. Re-verify with Cassandra included
+
+```
+sh scripts/verify-all.sh
+```
+
+Now every check runs for real, including Cassandra and the Trino federated query -- no more skip lines for those two.
+
+### 11. Using the platform day to day
+
+- **Open JupyterLab** by clicking the address `platform.sh up` printed (normally <http://127.0.0.1:8888>).
+- **Keep your own experiments out of Git:** copy any notebook into `notebooks/playground/` first -- everything in that folder is ignored by Git, so you can edit and re-run freely without it ever showing up in `git status` or a commit.
+- **Try each database from Python:** `notebooks/jdbc.ipynb` (PostgreSQL + MySQL), `notebooks/mongo.ipynb`, `notebooks/neo4j.ipynb` and `notebooks/cassandra.ipynb` each connect to one engine and print its revenue total. Open, read and re-run them one at a time instead of reading the `.py` test scripts in `notebooks/` that `verify-all.sh` uses.
+- **Scala:** see the [Scala](#scala) section below -- a terminal shell, a notebook that drives it (`notebooks/scala.ipynb`), or a real Scala kernel via the Zeppelin add-on.
 
 ## Scala
 
-Jupyter here runs Python. For Scala, there are two ways to run it, depending on how interactive you want to be:
+Jupyter here runs Python. For Scala, there are three ways to run it, depending on how interactive you want to be:
 
 **A shell**, for quick, one-off code -- works today on `main`:
 
@@ -93,9 +155,11 @@ docker compose exec tools spark-shell
 ```
 
 You get a `scala>` prompt already connected to Hive:
+
 ```scala
 spark.sql("select category, count(*) as products from shop.products group by category order by category").show()
 ```
+
 Type `:quit` to leave.
 
 **From inside JupyterLab**, without opening a terminal -- `notebooks/scala.ipynb` runs on the Python kernel but its one cell drives `spark-shell` for you and prints the result back into the notebook. It's the same shell as above, just launched from a notebook cell instead of a terminal.
@@ -107,7 +171,22 @@ git checkout experiment-zeppelin
 docker compose -f compose.zeppelin.yml up -d --wait
 ```
 
-Then open **http://127.0.0.1:8090**. See [`images/zeppelin/README.md`](images/zeppelin/README.md) for the full setup and verification steps.
+Then open **http://127.0.0.1:8090**. Create a note using the `spark` interpreter and run a Scala paragraph, the same idea as the shell example above:
+
+```scala
+%spark
+spark.sql("SHOW TABLES IN shop").show(false)
+```
+
+Or a SQL paragraph:
+
+```sql
+%spark.sql
+SELECT category, COUNT(*) AS products
+FROM shop.products GROUP BY category ORDER BY category
+```
+
+Both run through Spark against the existing Hive metastore. See [`images/zeppelin/README.md`](images/zeppelin/README.md) for the full setup and verification steps.
 
 ## Stop, restart, erase
 
@@ -175,7 +254,7 @@ A small online shop, generated with a fixed random seed so everyone gets identic
 - **A container disappears, or things become very slow:** you are probably out of memory. Switch off modules you do not need, or give Docker more memory.
 - **Cassandra and Neo4j are slow to start.** Wait for `sh scripts/platform.sh up` to finish before you load data.
 - **You changed a password in `.env` after the first start,** and a database now refuses you: the database kept its original password. Run `sh scripts/platform.sh reset`, then start again.
-- **Testing this on a machine that has run the project before?** Deleting the project folder does not remove Docker's containers, volumes, or images — Docker tracks those separately, keyed to the project name. `sh scripts/platform.sh reset` clears data but keeps built images (fast, seconds). For a true from-scratch rebuild — matching exactly what a brand-new user's first run looks like — use `bash scripts/full-rebuild.sh`, then `sh scripts/platform.sh up` again. This re-downloads and rebuilds everything, so it is slow (20-40+ minutes). Most people never need this; it exists for re-testing the platform itself.
+- **Testing this on a machine that has run the project before?** Deleting the project folder does not remove Docker's containers, volumes, or images -- Docker tracks those separately, keyed to the project name. `sh scripts/platform.sh reset` clears data but keeps built images (fast, seconds). For a true from-scratch rebuild -- matching exactly what a brand-new user's first run looks like -- use `bash scripts/full-rebuild.sh`, then `sh scripts/platform.sh up` again. This re-downloads and rebuilds everything, so it is slow (20-40+ minutes). Most people never need this; it exists for re-testing the platform itself.
 
 ## Tips
 
@@ -225,7 +304,27 @@ Run the clean-clone test after any change you plan to share. It refuses to run w
 
 ## License and citation
 
-The scripts, configuration and documentation in this repository are released under the MIT License (see [LICENSE](LICENSE)). To cite this work, use the "Cite this repository" button on GitHub, which reads [CITATION.cff](CITATION.cff).
+The scripts, configuration and documentation in this repository are released under the MIT License (see [LICENSE](LICENSE)).
+
+To cite this work, use the **"Cite this repository"** button on GitHub (reads [CITATION.cff](CITATION.cff)), or copy one of these directly:
+
+**APA**
+```
+Zain, C. (2026). Polyglot Big Data Lab (Version 1.0.0) [Computer software]. https://github.com/choiruzain/polyglot-bigdata-lab
+```
+
+**BibTeX**
+```bibtex
+@software{Zain_Polyglot_Big_Data_Lab_2026,
+  author  = {Zain, Choiru},
+  license = {MIT},
+  month   = sep,
+  title   = {{Polyglot Big Data Lab}},
+  url     = {https://github.com/choiruzain/polyglot-bigdata-lab},
+  version = {1.0.0},
+  year    = {2026}
+}
+```
 
 ## Third-party software
 
